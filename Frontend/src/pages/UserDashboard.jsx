@@ -11,6 +11,7 @@ import {
   Menu,
   MenuItem,
   Avatar,
+  Select,
 } from "@mui/material";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
@@ -21,6 +22,8 @@ import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
+
+import CloseIcon from "@mui/icons-material/Close";
 
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
@@ -34,6 +37,7 @@ export default function UserDashboard() {
   const [tab, setTab] = useState(0);
   //   const [darkMode, setDarkMode] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedSub, setSelectedSub] = useState("Rings");
   const {
     darkMode,
     toggleTheme,
@@ -43,6 +47,7 @@ export default function UserDashboard() {
     borderColor,
     secondaryText,
   } = useThemeContext();
+
   const handleProfileClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -80,34 +85,78 @@ export default function UserDashboard() {
     navigate("/catalogue");
   };
 
+  const [videoTemplates, setVideoTemplates] = useState([]);
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        // Yahan 'jewellery' aapki category ka slug hai (Database me jo slug ho wo daalein)
+        const response = await axios.get(
+          "http://localhost:5000/api/templates/by-category/jewellery",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // authMiddleware laga hai isliye token bhejna zaroori hai
+            },
+          }
+        );
+        setVideoTemplates(response.data);
+      } catch (error) {
+        console.error("Failed to fetch video templates:", error);
+      }
+    };
+
+    if (tab === 1) {
+      fetchTemplates();
+    }
+  }, [tab]);
   // --- NAYA CODE START ---
   const fileInputRef = useRef(null);
-  const [uploadStatus, setUploadStatus] = useState(""); // Upload dikhane ke liye
+  const [uploadStatus, setUploadStatus] = useState({ 1: "", 2: "" }); // Upload dikhane ke liye
   const [uploadedFilePath, setUploadedFilePath] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState({ 1: null, 2: null });
 
   const handleFileUpload = async (event) => {
+    if (tab === 0) return;
     const file = event.target.files[0];
     if (!file) return;
 
     const formData = new FormData();
-    formData.append('imageFile', file); // 'imageFile' backend ke multer se match hona chahiye
+    formData.append("imageFile", file);
+
+    let folderName = tab === 1 ? "video_gen" : "theme_gen";
 
     try {
-      setUploadStatus("Uploading... Please wait ⏳");
-      
-      // Backend ko request bhej rahe hain
-      const response = await axios.post('http://localhost:5000/api/upload/image', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      setUploadStatus((prev) => ({ ...prev, [tab]: "Uploading... ⏳" }));
 
-      setUploadStatus("Upload Successful! 🎉");
-      setUploadedFilePath(response.data.localPath); // Video generation me kaam aayega
-      console.log("Server par file yahan save hui:", response.data.localPath);
+      const response = await axios.post(
+        `http://localhost:5000/api/upload/image?folder=${folderName}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
 
+      setUploadStatus((prev) => ({ ...prev, [tab]: "Upload Successful! 🎉" }));
+      setUploadedFilePath(response.data.localPath);
+
+      // Image Preview Set Karna
+      setUploadedImages((prev) => ({
+        ...prev,
+        [tab]: URL.createObjectURL(file),
+      }));
+
+      console.log(`Saved at ${folderName}:`, response.data.localPath);
     } catch (error) {
-      console.error('Upload Error:', error);
-      setUploadStatus("Upload failed! ❌");
+      console.error("Upload Error:", error);
+      setUploadStatus((prev) => ({ ...prev, [tab]: "Upload failed! ❌" }));
+    } finally {
+      event.target.value = null;
     }
+  };
+
+  // 👈 NAYA LOGIC: Image remove karne ke liye
+  const handleRemoveImage = (e, currentTab) => {
+    e.stopPropagation(); // Isse file input dubara trigger nahi hoga
+    setUploadedImages((prev) => ({ ...prev, [currentTab]: null }));
+    setUploadStatus((prev) => ({ ...prev, [currentTab]: "" }));
   };
   // --- NAYA CODE END ---
 
@@ -123,6 +172,13 @@ export default function UserDashboard() {
       {/* ================= BODY ================= */}
 
       <Container maxWidth="lg" sx={{ py: 5 }}>
+        <input
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+        />
         {/* ================= TABS ================= */}
         <Paper
           sx={{
@@ -214,6 +270,7 @@ export default function UserDashboard() {
               }}
             >
               <Box
+                onClick={() => fileInputRef.current.click()}
                 sx={{
                   width: "100%",
                   height: "100%",
@@ -223,6 +280,7 @@ export default function UserDashboard() {
                   justifyContent: "center",
                   alignItems: "center",
                   flexDirection: "column",
+                  cursor: "pointer",
                   py: 10,
                 }}
               >
@@ -250,7 +308,7 @@ export default function UserDashboard() {
                 </Box>
 
                 <Typography variant="h5" fontWeight={700} gutterBottom>
-                  Tap to upload
+                  {uploadStatus[0] ? uploadStatus[0] : "Tap to upload"}
                 </Typography>
 
                 <Typography
@@ -337,18 +395,14 @@ export default function UserDashboard() {
                     Image to Video
                   </Typography>
 
-                  {/* UPLOAD */}
-                    <input
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                  />
+                  {/* 👈 TAB 1 UPLOAD BOX UPDATE */}
                   <Box
-                    onClick={() => fileInputRef.current.click()}
+                    onClick={() =>
+                      !uploadedImages[1] && fileInputRef.current.click()
+                    }
                     sx={{
-                      border: "2px dashed #d6d6d6",
+                      position: "relative",
+                      border: uploadedImages[1] ? "none" : "2px dashed #d6d6d6",
                       borderRadius: "20px",
                       height: "180px",
                       display: "flex",
@@ -356,21 +410,61 @@ export default function UserDashboard() {
                       alignItems: "center",
                       flexDirection: "column",
                       color: textColor,
-                      cursor: "pointer",
-                      "&:hover": { borderColor: "#c6ff00" },
+                      cursor: uploadedImages[1] ? "default" : "pointer",
+                      "&:hover": {
+                        borderColor: uploadedImages[1] ? "none" : "#c6ff00",
+                      },
                       mb: 3,
+                      overflow: "hidden",
                     }}
                   >
-                    <CloudUploadRoundedIcon sx={{ fontSize: 50, mb: 2 }} />
-
-                    <Typography fontWeight={700}>
-                      {uploadStatus ? uploadStatus : "DROP OR CLICK TO UPLOAD"}
-                    </Typography>
-
-                    {!uploadStatus && (
-                      <Typography variant="body2">
-                        JPG, PNG, WEBP, HEIC — max 10MB
-                      </Typography>
+                    {uploadedImages[1] ? (
+                      <>
+                        <img
+                          src={uploadedImages[1]}
+                          alt="Video Ref"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <Box
+                          onClick={(e) => handleRemoveImage(e, 1)}
+                          sx={{
+                            position: "absolute",
+                            top: 10,
+                            right: 10,
+                            bgcolor: "black",
+                            color: "white",
+                            borderRadius: "50%",
+                            width: 28,
+                            height: 28,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            zIndex: 10,
+                            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 18 }} />
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <CloudUploadRoundedIcon sx={{ fontSize: 50, mb: 2 }} />
+                        <Typography fontWeight={700}>
+                          {uploadStatus[1]
+                            ? uploadStatus[1]
+                            : "DROP OR CLICK TO UPLOAD"}
+                        </Typography>
+                        {!uploadStatus[1] && (
+                          <Typography variant="body2">
+                            JPG, PNG, WEBP, HEIC — max 10MB
+                          </Typography>
+                        )}
+                      </>
                     )}
                   </Box>
 
@@ -566,42 +660,105 @@ export default function UserDashboard() {
                       Fashion
                     </Button>
                   </Stack>
+                  {/* SUB CATEGORY */}
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    mb={3}
+                    sx={{ overflowX: "auto", pb: 1 }}
+                  >
+                    {["Rings", "Necklaces", "Earrings", "Bracelets"].map(
+                      (item) => {
+                        const isActive = selectedSub === item; // Check if this button is active
+
+                        return (
+                          <Button
+                            key={item}
+                            variant="outlined"
+                            onClick={() => setSelectedSub(item)} // Click karne par state update hogi
+                            sx={{
+                              // Agar active hai toh aapka style, warna default
+                              borderColor: isActive ? "#c6ff00" : borderColor,
+                              color: isActive ? "#7cb518" : textColor,
+                              borderRadius: "14px",
+                              textTransform: "none",
+                              fontWeight: isActive ? 700 : 500,
+                              whiteSpace: "nowrap",
+                              "&:hover": {
+                                borderColor: "#c6ff00",
+                                bgcolor: "transparent",
+                              },
+                            }}
+                          >
+                            {item}
+                          </Button>
+                        );
+                      },
+                    )}
+                  </Stack>
 
                   {/* TEMPLATE CARDS */}
 
                   <Grid container spacing={2}>
-                    {[1, 2, 3, 4].map((item) => (
-                      <Grid item xs={12} sm={6} md={4} key={item}>
-                        <Paper
-                          sx={{
-                            bgcolor: cardColor,
-                            borderRadius: "18px",
-                            overflow: "hidden",
-                            border: "1px solid #e0e0e0",
-                            boxShadow: "none",
-                          }}
-                        >
-                          <Box
+                    {videoTemplates.length > 0 ? (
+                      videoTemplates.map((item, index) => (
+                        <Grid item xs={12} sm={6} md={4} key={item._id}>
+                          <Paper
                             sx={{
-                              height: 180,
-                              bgcolor: "#f5f5f5",
+                              bgcolor: cardColor,
+                              borderRadius: "18px",
+                              overflow: "hidden",
+                              border: "1px solid #e0e0e0",
+                              boxShadow: "none",
                             }}
-                          />
-
-                          <Box p={2}>
-                            <Typography
+                          >
+                            {/* VIDEO PLAYER BOX */}
+                            <Box
                               sx={{
-                                color: "#c68b45",
-                                fontWeight: 700,
-                                fontSize: "14px",
+                                height: 180,
+                                bgcolor: "#000", // Video border black achha lagta hai
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
                               }}
                             >
-                              TEMPLATE {item}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    ))}
+                              <video
+                                width="100%"
+                                height="100%"
+                                controls // Play/Pause controls ke liye
+                                style={{ objectFit: "cover" }} // Box me fit karne ke liye
+                              >
+                                {/* Nayi Streaming API ka route */}
+                                <source
+                                  src={`http://localhost:5000/api/templates/stream/${item._id}`}
+                                  type="video/mp4"
+                                />
+                                Your browser does not support the video tag.
+                              </video>
+                            </Box>
+
+                            <Box p={2}>
+                              <Typography
+                                sx={{
+                                  color: "#c68b45",
+                                  fontWeight: 700,
+                                  fontSize: "14px",
+                                }}
+                              >
+                                {item.subcategoryName
+                                  ? item.subcategoryName.toUpperCase()
+                                  : `TEMPLATE ${index + 1}`}
+                              </Typography>
+                            </Box>
+                          </Paper>
+                        </Grid>
+                      ))
+                    ) : (
+                      // Agar API se koi template na mile toh ye dikhega
+                      <Typography sx={{ p: 2, color: secondaryText, width: "100%", textAlign: "center", mt: 2 }}>
+                        No templates found for this category.
+                      </Typography>
+                    )}
                   </Grid>
                 </Box>
               </Grid>
@@ -658,56 +815,72 @@ export default function UserDashboard() {
 
                     <Box sx={{ flex: 1 }}>
                       <Typography
-                        sx={{
-                          color: textColor,
-                          mb: 1,
-                          fontWeight: 700,
-                        }}
+                        sx={{ color: textColor, mb: 1, fontWeight: 700 }}
                       >
                         MAIN CATEGORY
                       </Typography>
-
-                      <select
-                        style={{
+                      <Select
+                        defaultValue=""
+                        displayEmpty
+                        sx={{
                           width: "100%",
-                          height: "35px",
-                          background: cardColor,
-                          border: "1px solid #d6d6d6",
+                          height: "45px",
+                          bgcolor: cardColor,
                           borderRadius: "14px",
                           color: textColor,
-                          padding: "0 16px",
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#d6d6d6",
+                          },
+                          "&:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#c6ff00", // Hover par theme color
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#c6ff00",
+                          },
                         }}
                       >
-                        <option>Jewellery</option>
-                      </select>
+                        <MenuItem value="" disabled>
+                          Main Category
+                        </MenuItem>
+                        <MenuItem value="jewellery">Jewellery</MenuItem>
+                      </Select>
                     </Box>
 
-                    {/* SECOND SELECT */}
-
+                    {/* SUB CATEGORY */}
                     <Box sx={{ flex: 1 }}>
                       <Typography
-                        sx={{
-                          color: textColor,
-                          mb: 1,
-                          fontWeight: 700,
-                        }}
+                        sx={{ color: textColor, mb: 1, fontWeight: 700 }}
                       >
-                        MAIN CATEGORY
+                        SUB CATEGORY
                       </Typography>
-
-                      <select
-                        style={{
+                      <Select
+                        defaultValue=""
+                        displayEmpty
+                        sx={{
                           width: "100%",
-                          height: "35px",
-                          background: cardColor,
-                          border: "1px solid #d6d6d6",
+                          height: "45px",
+                          bgcolor: cardColor,
                           borderRadius: "14px",
                           color: textColor,
-                          padding: "0 16px",
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#d6d6d6",
+                          },
+                          "&:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#c6ff00",
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#c6ff00",
+                          },
                         }}
                       >
-                        <option>Jewellery</option>
-                      </select>
+                        <MenuItem value="" disabled>
+                          Sub Category
+                        </MenuItem>
+                        <MenuItem value="rings">Rings</MenuItem>
+                        <MenuItem value="necklaces">Pendant</MenuItem>
+                        <MenuItem value="earrings">Bangles</MenuItem>
+                        <MenuItem value="clothing">Articles</MenuItem>
+                      </Select>
                     </Box>
                   </Box>
                   <Typography
@@ -750,9 +923,15 @@ export default function UserDashboard() {
                     Reference Image *
                   </Typography>
 
+                  {/* 👈 TAB 2 UPLOAD BOX UPDATE */}
                   <Box
+                    onClick={() =>
+                      !uploadedImages[2] && fileInputRef.current.click()
+                    }
                     sx={{
-                      border: "2px dashed #d6d6d6",
+                      position: "relative",
+                      border: uploadedImages[2] ? "none" : "2px dashed #d6d6d6",
+                      cursor: uploadedImages[2] ? "default" : "pointer",
                       borderRadius: "30px",
                       height: "360px",
                       display: "flex",
@@ -760,50 +939,79 @@ export default function UserDashboard() {
                       alignItems: "center",
                       flexDirection: "column",
                       color: secondaryText,
-                      width: "160%",
+                      width: "100%",
+                      overflow: "hidden",
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 100,
-                        height: 100,
-                        bgcolor: "rgba(198,255,0,0.15)",
-                        borderRadius: "30px",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        mb: 4,
-                      }}
-                    >
-                      <CloudUploadRoundedIcon
-                        sx={{
-                          fontSize: 50,
-                          color: "#7cb518",
-                        }}
-                      />
-                    </Box>
-
-                    <Typography
-                      variant="h4"
-                      fontWeight={700}
-                      sx={{
-                        color: textColor,
-                        mb: 2,
-                      }}
-                    >
-                      Drop your reference here
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        color: textColor,
-                        textAlign: "center",
-                      }}
-                    >
-                      Supports JPG, PNG, WEBP & HEIC
-                      <br />
-                      (Max size 16MB)
-                    </Typography>
+                    {uploadedImages[2] ? (
+                      <>
+                        <img
+                          src={uploadedImages[2]}
+                          alt="Theme Ref"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <Box
+                          onClick={(e) => handleRemoveImage(e, 2)}
+                          sx={{
+                            position: "absolute",
+                            top: 15,
+                            right: 15,
+                            bgcolor: "black",
+                            color: "white",
+                            borderRadius: "50%",
+                            width: 32,
+                            height: 32,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            zIndex: 10,
+                            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 20 }} />
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <Box
+                          sx={{
+                            width: 100,
+                            height: 100,
+                            bgcolor: "rgba(198,255,0,0.15)",
+                            borderRadius: "30px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            mb: 4,
+                          }}
+                        >
+                          <CloudUploadRoundedIcon
+                            sx={{ fontSize: 50, color: "#7cb518" }}
+                          />
+                        </Box>
+                        <Typography
+                          variant="h4"
+                          fontWeight={700}
+                          sx={{ color: textColor, mb: 2 }}
+                        >
+                          {uploadStatus[2]
+                            ? uploadStatus[2]
+                            : "Drop your reference here"}
+                        </Typography>
+                        <Typography
+                          sx={{ color: textColor, textAlign: "center" }}
+                        >
+                          Supports JPG, PNG, WEBP & HEIC
+                          <br />
+                          (Max size 16MB)
+                        </Typography>
+                      </>
+                    )}
                   </Box>
 
                   <Button
