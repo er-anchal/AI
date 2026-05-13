@@ -13,6 +13,9 @@ import templateRoutes from "./routes/templateRoutes.js";
 import templateCategoryRoutes from "./routes/templateCategoryRoutes.js";
 import subCategoryRoutes from "./routes/subCategoryRoutes.js";
 import pricingRoutes from "./routes/pricingRoutes.js";
+import subscriptionPlanRoutes from "./routes/subscriptionPlanRoutes.js";
+import faqRoutes from "./routes/faqRoutes.js";
+import userQueryRoutes from "./routes/userQueryRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -35,6 +38,9 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/template-categories", templateCategoryRoutes);
 app.use("/api/template-subcategories", subCategoryRoutes);
+app.use("/api/subscription-plans", subscriptionPlanRoutes);
+app.use("/api/faqs", faqRoutes);
+app.use("/api/user-queries", userQueryRoutes);
 
 app.get("/", (req, res) => {
   res.send("Banner App Backend Running");

@@ -15,6 +15,7 @@ import TemplatesPage from "./pages/Templates";
 // import DesignFrameCanvas from "./components/DesignFrameCanvas";
 import CategoriesPage from "./pages/CategoriesPage";
 import SubcategoriesPage from "./pages/SubcategoriesPage";
+import AdminPricingPage from "./pages/AdminPricingPage";
 
 // import AddTemplatePage from "./pages/AddTemplatePage";
 // import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -23,8 +24,11 @@ import SubcategoriesPage from "./pages/SubcategoriesPage";
 // import Favorites from "./pages/Favorites";
 // import FlipbookViewer from "./pages/FlipBookViewer";
 // import MyFlipbooks from "./pages/MyFlipBooks";
-// import PricingPage from "./pages/PricingPage";
+import PricingPage from "./pages/PricingPage";
 // import BlogPage from "./pages/BlogPage";
+import FaqPage from "./pages/FaqPage";
+import AdminFaqPage from "./pages/AdminFaqPage";
+import AdminQueriesPage from "./pages/AdminQueriesPage";
 import UserDashboard from "./pages/UserDashboard";
 // import CreateReel from "./pages/CreateReel";
 // import History from "./pages/History";
@@ -81,10 +85,11 @@ function App() {
             element={<TermsAndConditions />}
           /> */}
           {/* <Route path="/usercreation" element={<UserCreation />} /> */}
-          {/* <Route path="/pricing" element={<PricingPage />} /> */}
+          <Route path="/pricing" element={<PricingPage />} />
           {/* <Route path="/blog" element={<BlogPage />} /> */}
           {/* <Route path="/contact-us" element={<ContactUs />} /> */}
           {/* <Route path="/my-designs" element={<UserDesigns />} /> */}
+          <Route path="/faq" element={<FaqPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} /> 
@@ -132,6 +137,30 @@ function App() {
               </AdminRoute>
             }
           /> */}
+          <Route
+            path="/admin/pricing"
+            element={
+              <AdminRoute>
+                <AdminPricingPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/faqs"
+            element={
+              <AdminRoute>
+                <AdminFaqPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/queries"
+            element={
+              <AdminRoute>
+                <AdminQueriesPage />
+              </AdminRoute>
+            }
+          />
 
           {/* CANVAS ROUTES */}
           {/* <Route

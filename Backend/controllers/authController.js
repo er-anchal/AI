@@ -6,7 +6,7 @@ import Pricing from "../models/Pricing.js";
 // POST /api/auth/register
 export const registerUser = async (req, res) => {
   try {
-    const { name, phone, email, password } = req.body;
+    const { name, phone, email, password, role } = req.body;
 
     // 1️⃣ Validate input
     if (!name || !phone || !email || !password) {
@@ -55,6 +55,7 @@ export const registerUser = async (req, res) => {
       phone,
       email,
       password,
+      role,
     });
 
     const pricingData = await Pricing.create({
@@ -81,6 +82,7 @@ export const registerUser = async (req, res) => {
         name: user.name,
         phone: user.phone,
         email: user.email,
+        role: user.role,
         plan: user.plan,
       },
       pricing: {
@@ -204,7 +206,7 @@ export const getProfile = async (req, res) => {
 // PUT /api/auth/me
 export const updateProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = req.user;
 
     if (!user) {
       return res.status(404).json({
@@ -261,22 +263,24 @@ export const updateProfile = async (req, res) => {
     }
 
     /* ---------------- APPLY UPDATES SAFELY ---------------- */
-    Object.assign(user, updates);
-
-    await user.save();
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
 
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
       user: {
-        id: user._id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        avatar: user.avatar,
-        plan: user.plan,
-        preferences: user.preferences,
-        role: user.role,
+        id: updatedUser._id,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        email: updatedUser.email,
+        avatar: updatedUser.avatar,
+        plan: updatedUser.plan,
+        preferences: updatedUser.preferences,
+        role: updatedUser.role,
       },
     });
   } catch (error) {

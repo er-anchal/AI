@@ -148,7 +148,7 @@ const Profile = () => {
     },
   ];
 
-const [pricing, setPricing] = useState(null);
+  const [pricing, setPricing] = useState(null);
 
   // Final sidebar items
   const menuItems = isAdmin ? adminMenuItems : userMenuItems;
@@ -179,13 +179,16 @@ const [pricing, setPricing] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return; 
+    if (!token) return;
 
     const fetchPricing = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/pricing/my-plan`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/pricing/my-plan`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         setPricing(res.data);
       } catch (err) {
         console.error("Pricing fetch failed", err);
@@ -204,7 +207,7 @@ const [pricing, setPricing] = useState(null);
       const token = localStorage.getItem("token");
 
       const res = await axios.put(
-        `${import.meta.env.VITE_API_URL}/auth/update-profile`,
+        `${import.meta.env.VITE_API_URL}/auth/me`,
         form,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -213,8 +216,10 @@ const [pricing, setPricing] = useState(null);
 
       setUser(res.data.user);
       setEditMode(false);
+      alert("Profile updated successfully!");
     } catch (err) {
       console.error("Update failed", err);
+      alert("Failed to update profile");
     }
   };
 
@@ -357,33 +362,49 @@ const [pricing, setPricing] = useState(null);
         </Typography>
 
         {/* SUBSCRIPTION & CREDITS SECTION */}
-<Divider sx={{ my: 3 }} />
-<Typography variant="h6" fontWeight={700} mb={2}>
-  Subscription & Usage
-</Typography>
+        <Divider sx={{ my: 3 }} />
+        <Typography variant="h6" fontWeight={700} mb={2}>
+          Subscription & Usage
+        </Typography>
 
-<Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-  <Paper variant="outlined" sx={{ p: 2, textAlign: "center", borderRadius: 2 }}>
-    <Typography variant="body2" color="text.secondary">Image Credits</Typography>
-    <Typography variant="h5" fontWeight={700} color="primary">
-      {pricing ? `${pricing.imageCredits.used} / ${pricing.imageCredits.allocated}` : "0 / 0"}
-    </Typography>
-  </Paper>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <Paper
+            variant="outlined"
+            sx={{ p: 2, textAlign: "center", borderRadius: 2 }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Image Credits
+            </Typography>
+            <Typography variant="h5" fontWeight={700} color="primary">
+              {pricing
+                ? `${pricing.imageCredits.used} / ${pricing.imageCredits.allocated}`
+                : "0 / 0"}
+            </Typography>
+          </Paper>
 
-  <Paper variant="outlined" sx={{ p: 2, textAlign: "center", borderRadius: 2 }}>
-    <Typography variant="body2" color="text.secondary">Video Credits</Typography>
-    <Typography variant="h5" fontWeight={700} color="secondary">
-      {pricing ? `${pricing.videoCredits.used} / ${pricing.videoCredits.allocated}` : "0 / 0"}
-    </Typography>
-  </Paper>
-</Box>
+          <Paper
+            variant="outlined"
+            sx={{ p: 2, textAlign: "center", borderRadius: 2 }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Video Credits
+            </Typography>
+            <Typography variant="h5" fontWeight={700} color="secondary">
+              {pricing
+                ? `${pricing.videoCredits.used} / ${pricing.videoCredits.allocated}`
+                : "0 / 0"}
+            </Typography>
+          </Paper>
+        </Box>
 
-{pricing && (
-  <Typography sx={{ mt: 2, fontSize: "0.9rem", color: "gray" }}>
-    <strong>Current Plan:</strong> {pricing.planName} ({pricing.type}) <br />
-    <strong>Status:</strong> {pricing.isActive === 1 ? "Active" : "Inactive"}
-  </Typography>
-)}
+        {pricing && (
+          <Typography sx={{ mt: 2, fontSize: "0.9rem", color: "gray" }}>
+            <strong>Current Plan:</strong> {pricing.planName} ({pricing.type}){" "}
+            <br />
+            <strong>Status:</strong>{" "}
+            {pricing.isActive === 1 ? "Active" : "Inactive"}
+          </Typography>
+        )}
 
         {/* ACTION BUTTONS */}
         <Stack direction="row" spacing={2}>
@@ -392,7 +413,17 @@ const [pricing, setPricing] = useState(null);
               <Button variant="contained" onClick={handleUpdate}>
                 Save
               </Button>
-              <Button variant="outlined" onClick={() => setEditMode(false)}>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setEditMode(false);
+                  setForm({
+                    name: user.name || "",
+                    phone: user.phone || "",
+                    email: user.email || "",
+                  });
+                }}
+              >
                 Cancel
               </Button>
             </>

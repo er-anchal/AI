@@ -8,6 +8,10 @@ import {
   Container,
   Paper,
   Link,
+  Select,
+  FormControl,
+  InputLabel,
+  MenuItem,
 } from "@mui/material";
 import axios from "axios";
 
@@ -20,6 +24,7 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "USER",
   });
 
   const [loading, setLoading] = useState(false);
@@ -44,6 +49,7 @@ const Register = () => {
         phone: form.phone,
         email: form.email,
         password: form.password,
+        role: form.role,
       });
 
       navigate("/login");
@@ -177,6 +183,25 @@ const Register = () => {
                 placeholder="Confirm your password"
                 required
               />
+            </Box>
+
+            {/* Role Selection Dropdown */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" sx={{ mb: 0.5 }}>
+                Select Role *
+              </Typography>
+              <FormControl fullWidth size="small">
+                <Select
+                  name="role"
+                  value={form.role}
+                  onChange={handleChange}
+                  displayEmpty
+                >
+                  <MenuItem value="USER">User</MenuItem>
+                  <MenuItem value="CLIENT">Client</MenuItem>
+                  <MenuItem value="ADMIN">Admin</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
 
             {/* Submit Button */}

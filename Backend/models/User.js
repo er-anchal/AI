@@ -43,41 +43,13 @@ const UserSchema = new mongoose.Schema(
     // ───────────── Role & Status ─────────────
     role: {
       type: String,
-      enum: ["SUPER ADMIN", "ADMIN", "USER"],
+      enum: ["SUPER ADMIN", "ADMIN", "USER", "CLIENT"],
       default: "USER",
     },
 
     isActive: {
       type: Boolean,
       default: true,
-    },
-
-    // ───────────── Subscription ─────────────
-    plan: {
-      type: String,
-      enum: ["FREE", "PRO", "ENTERPRISE"],
-      default: "FREE",
-    },
-
-    planExpiry: {
-      type: Date,
-      default: null,
-    },
-
-    // ───────────── Image Usage Tracking ─────────────
-    usage: {
-      imagesEdited: {
-        type: Number,
-        default: 0,
-      },
-      imagesUploaded: {
-        type: Number,
-        default: 0,
-      },
-      storageUsedMB: {
-        type: Number,
-        default: 0,
-      },
     },
 
     // ───────────── Editor Preferences ─────────────
