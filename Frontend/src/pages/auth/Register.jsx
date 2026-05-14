@@ -25,13 +25,34 @@ const Register = () => {
     password: "",
     confirmPassword: "",
     role: "USER",
+    dob: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dobError, setDobError] = useState("");
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // Max allowed DOB = yesterday (must be born before today)
+  const today = new Date();
+  const maxDob = new Date(today);
+  maxDob.setDate(today.getDate() - 1);
+  const maxDobStr = maxDob.toISOString().split("T")[0]; // yyyy-mm-dd
+  const currentYear = today.getFullYear();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "dob") {
+      setDobError("");
+      if (value) {
+        const year = parseInt(value.split("-")[0], 10);
+        if (year >= currentYear) {
+          setDobError(`Birth year must be less than ${currentYear}.`);
+          return;
+        }
+      }
+    }
+    setForm({ ...form, [name]: value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,6 +60,13 @@ const Register = () => {
 
     if (form.password !== form.confirmPassword) {
       return setError("Passwords do not match");
+    }
+
+    if (form.dob) {
+      const year = parseInt(form.dob.split("-")[0], 10);
+      if (year >= currentYear) {
+        return setError(`Birth year must be less than ${currentYear}.`);
+      }
     }
 
     try {
@@ -50,6 +78,7 @@ const Register = () => {
         email: form.email,
         password: form.password,
         role: form.role,
+        dob: form.dob,
       });
 
       navigate("/login");
@@ -182,6 +211,30 @@ const Register = () => {
                 onChange={handleChange}
                 placeholder="Confirm your password"
                 required
+              />
+            </Box>
+
+            {/* Date of Birth */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" sx={{ mb: 0.5 }}>
+                Date of Birth
+              </Typography>
+              <TextField
+                fullWidth
+                name="dob"
+                type="date"
+                variant="outlined"
+                size="small"
+                value={form.dob}
+                onChange={handleChange}
+                inputProps={{
+                  max: maxDobStr,
+                }}
+                InputLabelProps={{ shrink: true }}
+                error={!!dobError}
+                helperText={
+                  dobError || `Birth year must be before ${currentYear}`
+                }
               />
             </Box>
 

@@ -16,6 +16,7 @@ import pricingRoutes from "./routes/pricingRoutes.js";
 import subscriptionPlanRoutes from "./routes/subscriptionPlanRoutes.js";
 import faqRoutes from "./routes/faqRoutes.js";
 import userQueryRoutes from "./routes/userQueryRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -41,6 +42,7 @@ app.use("/api/template-subcategories", subCategoryRoutes);
 app.use("/api/subscription-plans", subscriptionPlanRoutes);
 app.use("/api/faqs", faqRoutes);
 app.use("/api/user-queries", userQueryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/", (req, res) => {
   res.send("Banner App Backend Running");

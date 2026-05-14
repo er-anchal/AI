@@ -28,6 +28,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import { useThemeContext } from "../context/ThemeContext";
 import { useAuth } from "./auth/AuthContext";
 import axios from "axios";
@@ -58,7 +59,14 @@ const AdminFaqPage = () => {
     shortDescription: "",
     answer: "",
     isActive: true,
+    images: [],
+    video: "",
+    pdf: "",
   });
+
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedPdf, setSelectedPdf] = useState(null);
 
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
   const [saving, setSaving] = useState(false);
@@ -93,15 +101,26 @@ const AdminFaqPage = () => {
         shortDescription: faq.shortDescription || "",
         answer: faq.answer,
         isActive: faq.isActive,
+        images: faq.images || [],
+        video: faq.video || "",
+        pdf: faq.pdf || "",
       });
     } else {
       setEditingFaq(null);
-      setFormData({ title: "", category: "General", shortDescription: "", answer: "", isActive: true });
+      setFormData({ title: "", category: "General", shortDescription: "", answer: "", isActive: true, images: [], video: "", pdf: "" });
     }
+    setSelectedImages([]);
+    setSelectedVideo(null);
+    setSelectedPdf(null);
     setOpenDialog(true);
   };
 
-  const handleCloseDialog = () => setOpenDialog(false);
+  const handleCloseDialog = () => {
+      setOpenDialog(false);
+      setSelectedImages([]);
+      setSelectedVideo(null);
+      setSelectedPdf(null);
+  };
 
   const handleFormChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -111,6 +130,41 @@ const AdminFaqPage = () => {
     }));
   };
 
+  const handleFileChange = (e, type) => {
+    if (type === "images") {
+      setSelectedImages([...selectedImages, ...Array.from(e.target.files)]);
+    } else if (type === "video") {
+      setSelectedVideo(e.target.files[0]);
+    } else if (type === "pdf") {
+      setSelectedPdf(e.target.files[0]);
+    }
+  };
+
+  const handleRemoveExistingImage = (index) => {
+    setFormData((prev) => {
+      const newImages = [...prev.images];
+      newImages.splice(index, 1);
+      return { ...prev, images: newImages };
+    });
+  };
+
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const { data } = await axios.post(`${API_BASE_URL}/upload/faq-media`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return data.fileUrl;
+    } catch (error) {
+      console.error("Upload Error:", error);
+      throw new Error("Failed to upload file");
+    }
+  };
+
   const handleSaveFaq = async () => {
     if (!formData.title || !formData.category || !formData.answer) {
       setToast({ open: true, message: "Please fill required fields", severity: "warning" });
@@ -118,13 +172,39 @@ const AdminFaqPage = () => {
     }
     setSaving(true);
     try {
+      let uploadedImages = [...formData.images];
+      let uploadedVideo = formData.video;
+      let uploadedPdf = formData.pdf;
+
+      if (selectedImages.length > 0) {
+        for (const img of selectedImages) {
+          const url = await uploadFile(img);
+          uploadedImages.push(url);
+        }
+      }
+
+      if (selectedVideo) {
+        uploadedVideo = await uploadFile(selectedVideo);
+      }
+
+      if (selectedPdf) {
+        uploadedPdf = await uploadFile(selectedPdf);
+      }
+
+      const finalData = {
+        ...formData,
+        images: uploadedImages,
+        video: uploadedVideo,
+        pdf: uploadedPdf,
+      };
+
       if (editingFaq) {
-        await axios.put(`${API_BASE_URL}/faqs/${editingFaq._id}`, formData, {
+        await axios.put(`${API_BASE_URL}/faqs/${editingFaq._id}`, finalData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setToast({ open: true, message: "FAQ updated successfully", severity: "success" });
       } else {
-        await axios.post(`${API_BASE_URL}/faqs`, formData, {
+        await axios.post(`${API_BASE_URL}/faqs`, finalData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setToast({ open: true, message: "FAQ created successfully", severity: "success" });
@@ -286,6 +366,103 @@ const AdminFaqPage = () => {
                     sx={{ color: textColor }}
                   />
                 </FormGroup>
+
+                <Box sx={{ border: `1px solid ${borderColor}`, p: 2, borderRadius: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Media Uploads</Typography>
+                  
+                  {/* Images */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Images (Sequential Steps)</Typography>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      multiple 
+                      onChange={(e) => handleFileChange(e, "images")} 
+                      style={{ color: textColor }} 
+                    />
+                    {formData.images && formData.images.length > 0 && (
+                      <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ width: '100%' }}>Existing Images:</Typography>
+                        {formData.images.map((img, i) => (
+                           <Box key={i} sx={{ position: 'relative', display: 'inline-block', mr: 1 }}>
+                             <img src={`${API_BASE_URL.replace('/api', '')}${img}`} alt="preview" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px'}} />
+                             <IconButton 
+                               size="small" 
+                               onClick={() => handleRemoveExistingImage(i)}
+                               sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'error.main', color: '#fff', '&:hover': { bgcolor: 'error.dark' }, width: 20, height: 20 }}
+                             >
+                               <CloseIcon sx={{ fontSize: 14 }} />
+                             </IconButton>
+                           </Box>
+                        ))}
+                      </Box>
+                    )}
+                    {selectedImages.length > 0 && (
+                      <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="caption" color="success.main" sx={{ width: '100%' }}>New Images to Upload:</Typography>
+                        {selectedImages.map((img, i) => (
+                           <img key={i} src={URL.createObjectURL(img)} alt="new preview" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '2px solid #10b981'}} />
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Video */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Video (Optional)</Typography>
+                    <input 
+                      type="file" 
+                      accept="video/*" 
+                      onChange={(e) => handleFileChange(e, "video")} 
+                      style={{ color: textColor }} 
+                    />
+                    {formData.video && !selectedVideo && (
+                      <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
+                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>Existing Video:</Typography>
+                         <video src={`${API_BASE_URL.replace('/api', '')}${formData.video}`} controls style={{height: '100px', borderRadius: '4px'}} />
+                         <IconButton 
+                           size="small" 
+                           onClick={() => setFormData(prev => ({ ...prev, video: "" }))}
+                           sx={{ position: 'absolute', top: 20, right: -10, bgcolor: 'error.main', color: '#fff', '&:hover': { bgcolor: 'error.dark' }, width: 20, height: 20 }}
+                         >
+                           <CloseIcon sx={{ fontSize: 14 }} />
+                         </IconButton>
+                      </Box>
+                    )}
+                    {selectedVideo && (
+                      <Box sx={{ mt: 2 }}>
+                         <Typography variant="caption" color="success.main" sx={{ display: 'block', mb: 1 }}>New Video to Upload:</Typography>
+                         <video src={URL.createObjectURL(selectedVideo)} controls style={{height: '100px', borderRadius: '4px', border: '2px solid #10b981'}} />
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* PDF */}
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>PDF Document (Optional)</Typography>
+                    <input 
+                      type="file" 
+                      accept="application/pdf" 
+                      onChange={(e) => handleFileChange(e, "pdf")} 
+                      style={{ color: textColor }} 
+                    />
+                    {formData.pdf && !selectedPdf && (
+                      <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                         <Button variant="outlined" size="small" href={`${API_BASE_URL.replace('/api', '')}${formData.pdf}`} target="_blank" sx={{ color: textColor, borderColor: borderColor, textTransform: 'none' }}>
+                            View Existing PDF
+                         </Button>
+                         <Button size="small" color="error" onClick={() => setFormData(prev => ({ ...prev, pdf: "" }))}>
+                            Remove
+                         </Button>
+                      </Box>
+                    )}
+                    {selectedPdf && (
+                      <Box sx={{ mt: 2 }}>
+                         <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1 }}>Ready to upload: {selectedPdf.name}</Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
              </Box>
           </DialogContent>
           <DialogActions sx={{ bgcolor: cardColor, p: 2, borderTop: `1px solid ${borderColor}` }}>

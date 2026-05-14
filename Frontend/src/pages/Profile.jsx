@@ -25,6 +25,7 @@ import {
   DesignServices as DesignServicesIcon,
   AutoAwesome,
   UsbRounded,
+  Notifications as NotificationsIcon,
 } from "@mui/icons-material";
 import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
@@ -42,7 +43,16 @@ const Profile = () => {
     name: "",
     phone: "",
     email: "",
+    dob: "",
   });
+  const [dobError, setDobError] = useState("");
+
+  // DOB constraints
+  const todayDate = new Date();
+  const maxDob = new Date(todayDate);
+  maxDob.setDate(todayDate.getDate() - 1);
+  const maxDobStr = maxDob.toISOString().split("T")[0];
+  const currentYear = todayDate.getFullYear();
 
   // Sidebar menu items
   const isAdmin = user?.role === "ADMIN";
@@ -98,6 +108,11 @@ const Profile = () => {
       icon: <ContactMailIcon />,
       path: "/contact-us",
     },
+    {
+      label: "Notifications",
+      icon: <NotificationsIcon />,
+      path: "/notifications",
+    },
   ];
 
   const userMenuItems = [
@@ -146,6 +161,11 @@ const Profile = () => {
       icon: <ContactMailIcon />,
       path: "/contact-us",
     },
+    {
+      label: "Notifications",
+      icon: <NotificationsIcon />,
+      path: "/notifications",
+    },
   ];
 
   const [pricing, setPricing] = useState(null);
@@ -167,6 +187,7 @@ const Profile = () => {
           name: res.data.user.name || "",
           phone: res.data.user.phone || "",
           email: res.data.user.email || "",
+          dob: res.data.user.dob ? res.data.user.dob.split('T')[0] : "",
         });
       } catch (err) {
         console.error(err);
@@ -199,7 +220,18 @@ const Profile = () => {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "dob") {
+      setDobError("");
+      if (value) {
+        const year = parseInt(value.split("-")[0], 10);
+        if (year >= currentYear) {
+          setDobError(`Birth year must be less than ${currentYear}.`);
+          return;
+        }
+      }
+    }
+    setForm({ ...form, [name]: value });
   };
 
   const handleUpdate = async () => {
@@ -353,6 +385,27 @@ const Profile = () => {
           </Typography>
         )}
 
+        {/* DOB */}
+        {editMode ? (
+          <TextField
+            fullWidth
+            name="dob"
+            type="date"
+            label="Date of Birth"
+            value={form.dob}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ max: maxDobStr }}
+            error={!!dobError}
+            helperText={dobError || `Birth year must be before ${currentYear}`}
+            sx={{ mb: 2 }}
+          />
+        ) : (
+          <Typography sx={{ mb: 2 }}>
+            <strong>Date of Birth:</strong> {user.dob ? new Date(user.dob).toLocaleDateString() : "Not set"}
+          </Typography>
+        )}
+
         <Typography sx={{ mb: 1 }}>
           <strong>Role:</strong> {user.role}
         </Typography>
@@ -421,6 +474,7 @@ const Profile = () => {
                     name: user.name || "",
                     phone: user.phone || "",
                     email: user.email || "",
+                    dob: user.dob ? user.dob.split('T')[0] : "",
                   });
                 }}
               >

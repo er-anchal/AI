@@ -28,6 +28,18 @@ const faqSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    images: {
+      type: [String],
+      default: [],
+    },
+    video: {
+      type: String,
+      default: "",
+    },
+    pdf: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

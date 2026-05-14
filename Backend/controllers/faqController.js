@@ -24,7 +24,7 @@ export const getAllFaqs = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error fetching FAQs" });
   }
 };
-async (req, res) => {
+export const getAdminFaqs = async (req, res) => {
   try {
     const faqs = await Faq.find().sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: faqs.length, data: faqs });
@@ -36,7 +36,7 @@ async (req, res) => {
 
 export const createFaq = async (req, res) => {
   try {
-    const { title, category, shortDescription, answer, isFeatured, isActive } = req.body;
+    const { title, category, shortDescription, answer, isFeatured, isActive, images, video, pdf } = req.body;
     
     if (!title || !category || !answer) {
       return res.status(400).json({ success: false, message: "Please provide title, category, and answer" });
@@ -48,7 +48,10 @@ export const createFaq = async (req, res) => {
       shortDescription,
       answer,
       isFeatured,
-      isActive
+      isActive,
+      images,
+      video,
+      pdf
     });
 
     res.status(201).json({ success: true, data: faq });

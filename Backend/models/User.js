@@ -35,6 +35,11 @@ const UserSchema = new mongoose.Schema(
       select: false, // security best practice
     },
 
+    dob: {
+      type: Date,
+      default: null,
+    },
+
     avatar: {
       type: String, // profile image URL
       default: "",

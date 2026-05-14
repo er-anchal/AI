@@ -1,6 +1,7 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Box } from "@mui/material";
 import Navbar from "./components/Navbar";
+import AdminLayout from "./components/AdminLayout";
 
 import { useThemeContext } from "./context/ThemeContext";
 
@@ -8,6 +9,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Profile from "./pages/Profile";
 import Home from "./pages/Home";
+import Notifications from "./pages/Notifications";
 // import Editor from "./pages/Editor"/;
 import AdminRoute from "./pages/auth/AdminRoute";
 import TemplatesPage from "./pages/Templates";
@@ -56,6 +58,18 @@ function CanvasLayout({ children }) {
   );
 }
 
+/* ---------------- PUBLIC LAYOUT ---------------- */
+function PublicLayout() {
+  return (
+    <>
+      <Navbar />
+      <Box sx={{ flexGrow: 1 }}>
+        <Outlet />
+      </Box>
+    </>
+  );
+}
+
 /* ---------------- APP ---------------- */
 function App() {
   const { bgColor, textColor } = useThemeContext();
@@ -71,10 +85,8 @@ function App() {
         transition: "0.3s ease",
       }}
     >
-      <Navbar />
-
-      <Box sx={{ flexGrow: 1 }}>
-        <Routes>
+      <Routes>
+        <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           {/* //<Route path="/favorites" element={<Favorites />} /> */}
           {/* <Route path="/my-magazines" element={<MyFlipbooks />} /> */}
@@ -93,6 +105,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} /> 
+          <Route path="/notifications" element={<Notifications />} />
           {/* 
           <Route
             path="/editor/:templateId"
@@ -103,8 +116,10 @@ function App() {
           {/* <Route path="/catalogue" element={<Catalogue />} /> */}
 
           <Route path="/dashboard" element={<UserDashboard />} />
+        </Route>
 
-          {/* ADMIN ROUTES */}
+        {/* ADMIN ROUTES */}
+        <Route element={<AdminLayout />}>
           <Route
             path="/categories"
             element={
@@ -161,8 +176,9 @@ function App() {
               </AdminRoute>
             }
           />
+        </Route>
 
-          {/* CANVAS ROUTES */}
+        {/* CANVAS ROUTES */}
           {/* <Route
             path="/design/:templateId"
             element={
@@ -188,9 +204,8 @@ function App() {
             }
           />
  */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Box>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Box>
   );
 }
