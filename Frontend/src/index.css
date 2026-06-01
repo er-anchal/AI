@@ -1,71 +1,7 @@
-/* :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-} */
+/* ============================================================
+   JEWELLERY AI STUDIO — Global Premium Styles
+   Light-Mode-First, Theme-Aware, Luxury SaaS
+   ============================================================ */
 
 html,
 body,
@@ -82,5 +18,259 @@ body,
 
 body {
   margin: 0;
+  font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease;
+}
+
+/* ============================================================
+   PREMIUM SCROLLBAR — Light Mode (Primary)
+   ============================================================ */
+:root {
+  --scrollbar-width: 5px;
+  --scrollbar-track-light: transparent;
+  --scrollbar-thumb-light: rgba(0, 0, 0, 0.14);
+  --scrollbar-thumb-light-hover: rgba(197, 168, 128, 0.7);
+  --scrollbar-track-dark: transparent;
+  --scrollbar-thumb-dark: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-dark-hover: rgba(197, 168, 128, 0.55);
+}
+
+/* Explicitly style the browser window scrollbar (used by pages like /image-results, /subcategories)
+   ::-webkit-scrollbar on html/body targets the main window scroll */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-light);
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-light);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-light-hover);
+}
+
+/* All div/container scrollbars (editor sidebars, panels, overflow:auto divs) */
+::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-width);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-light);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-light);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-light-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox — applies to window scroll AND div scrolls */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-light) var(--scrollbar-track-light);
+}
+
+/* ============================================================
+   DARK MODE SCROLLBAR
+   ============================================================ */
+[data-theme="dark"] ::-webkit-scrollbar-track,
+.dark-mode ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-dark);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb,
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-dark);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-dark-hover);
+}
+
+[data-theme="dark"] *,
+.dark-mode * {
+  scrollbar-color: var(--scrollbar-thumb-dark) var(--scrollbar-track-dark);
+}
+
+/* ============================================================
+   CANVAS EDITOR — Premium Custom Dropdown
+   ============================================================ */
+.luxury-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.luxury-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 44px;
+  padding: 0 40px 0 14px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 12px;
+  border: 1.5px solid #e8e8e3;
+  background-color: #f4f4f2;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  outline: none;
+  line-height: 1;
+}
+
+.luxury-select:hover {
+  border-color: #c5a880;
+  background-color: #faf9f7;
+}
+
+.luxury-select:focus {
+  border-color: #c5a880;
+  box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.18);
+  background-color: #ffffff;
+}
+
+/* Dark mode select */
+.dark-mode .luxury-select {
+  background-color: #121214;
+  border-color: #2d2d30;
+  color: #e5e5e7;
+}
+
+.dark-mode .luxury-select:hover {
+  border-color: #c5a880;
+  background-color: #1a1a1e;
+}
+
+.dark-mode .luxury-select:focus {
+  border-color: #c5a880;
+  box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.14);
+  background-color: #1a1a1e;
+}
+
+/* Chevron icon inside select */
+.luxury-select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-top: 5.5px solid #737373;
+  pointer-events: none;
+  transition: border-top-color 0.18s;
+}
+
+.luxury-select-wrapper:focus-within::after {
+  border-top-color: #c5a880;
+}
+
+.dark-mode .luxury-select-wrapper::after {
+  border-top-color: #a1a1aa;
+}
+
+/* ============================================================
+   CANVAS EDITOR — Filter Cards & Sidebar
+   ============================================================ */
+.filter-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: pointer;
+}
+
+.filter-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(197, 168, 128, 0.2);
+}
+
+.filter-card.active {
+  box-shadow: 0 0 0 2.5px #c5a880, 0 6px 18px rgba(197, 168, 128, 0.25);
+}
+
+/* Sidebar tab icon container */
+.sidebar-tab-btn {
+  border-radius: 10px;
+  transition: all 0.18s ease;
+}
+
+.sidebar-tab-btn:hover {
+  background: rgba(197, 168, 128, 0.08);
+}
+
+/* ============================================================
+   CANVAS EDITOR — Panel & Card Tokens
+   ============================================================ */
+.panel-section {
+  border-radius: 12px;
+  padding: 16px;
+  transition: box-shadow 0.18s;
+}
+
+.panel-section:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* Collapsible section header */
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #e8e8e3;
+  transition: color 0.18s;
+}
+
+.collapsible-header:hover {
+  color: #c5a880;
+}
+
+.dark-mode .collapsible-header {
+  border-bottom-color: #2d2d30;
+}
+
+/* Custom Bootstrap spacing utilities */
+.py-6 { padding-top: 3.5rem !important; padding-bottom: 3.5rem !important; }
+.py-7 { padding-top: 4.2rem !important; padding-bottom: 4.2rem !important; }
+.py-8 { padding-top: 5rem !important; padding-bottom: 5rem !important; }
+.my-6 { margin-top: 3.5rem !important; margin-bottom: 3.5rem !important; }
+.my-7 { margin-top: 4.2rem !important; margin-bottom: 4.2rem !important; }
+.my-8 { margin-top: 5rem !important; margin-bottom: 5rem !important; }
+
+@media (min-width: 992px) {
+  .py-lg-6 { padding-top: 3.8rem !important; padding-bottom: 3.8rem !important; }
+  .py-lg-7 { padding-top: 4.5rem !important; padding-bottom: 4.5rem !important; }
+  .py-lg-8 { padding-top: 5.2rem !important; padding-bottom: 5.2rem !important; }
+  .my-lg-6 { margin-top: 3.8rem !important; margin-bottom: 3.8rem !important; }
+  .my-lg-7 { margin-top: 4.5rem !important; margin-bottom: 4.5rem !important; }
+  .my-lg-8 { margin-top: 5.2rem !important; margin-bottom: 5.2rem !important; }
 }

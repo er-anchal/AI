@@ -211,7 +211,9 @@ export default function Categories({
                 {/* SLIDER */}
                 <Slider {...sliderSettings}>
                   {templates.map((t) => {
-                    const imageUrl = `${TEMP_URL}/uploads/${t.categorySlug}/${t.subcategoryName}/${t.fileName}`;
+                    const imageUrl = t.imageUrl
+                      ? `${TEMP_URL}${t.imageUrl}`
+                      : `${TEMP_URL}/uploads/${t.categorySlug}/${t.subcategorySlug || t.subcategoryName?.toLowerCase()}/${t.fileName}`;
 
                     return (
                       <Box key={t._id} sx={{ px: 1 }}>

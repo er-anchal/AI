@@ -8,6 +8,7 @@ import {
   Divider,
   useTheme,
 } from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
@@ -16,13 +17,13 @@ import axios from "axios";
 export default function Pricing() {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [openIndex, setOpenIndex] = useState(null);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPlans = async () => {
     try {
-      const { data } = await axios.get("http://localhost:5000/api/subscription-plans");
+      const apiBase = import.meta.env.VITE_API_URL;
+      const { data } = await axios.get(`${apiBase}/subscription-plans`);
       setPlans(data);
     } catch (error) {
       console.error("Error fetching plans:", error);
@@ -34,10 +35,6 @@ export default function Pricing() {
   useEffect(() => {
     fetchPlans();
   }, []);
-
-  const toggleFAQ = (index) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
 
   return (
     <>
@@ -81,11 +78,20 @@ export default function Pricing() {
           </Button>
         </Box>
         {/* PRICING CARDS */}
-        <Grid
-          container
-          spacing={3}
-          justifyContent="center"
-          alignItems="stretch"
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(4, 1fr)"
+            },
+            gap: 3,
+            justifyContent: "center",
+            width: "100%",
+            maxWidth: "1200px",
+            mx: "auto"
+          }}
         >
           {loading ? (
             <Typography mt={4}>Loading plans...</Typography>
@@ -93,97 +99,131 @@ export default function Pricing() {
             <Typography mt={4}>No plans available at the moment.</Typography>
           ) : (
             plans.map((plan, i) => (
-            <Grid
-              key={i}
-              size={{ xs: 12, sm: 6, md: 3 }}
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              <Card
+              <Box
+                key={i}
                 sx={{
-                  width: 320,
-                  height: 480,
                   display: "flex",
-                  flexDirection: "column",
-                  borderRadius: 3,
-                  border: plan.recommended
-                    ? "1px solid black"
-                    : "1px solid #ddd",
-                  transition: "0.3s ease",
-                  "&:hover": {
-                    border: "1px solid black",
-                    transform: "translateY(-6px)",
-                    boxShadow: 6,
-                  },
+                  justifyContent: "center",
+                  width: "100%",
+                  minWidth: 0
                 }}
               >
-                <CardContent
+                <Card
                   sx={{
-                    flex: 1,
+                    width: "100%",
+                    height: "100%",
                     display: "flex",
                     flexDirection: "column",
+                    borderRadius: "16px",
+                    border: plan.recommended ? "2px solid #1976d2" : "1px solid #ddd",
+                    boxShadow: plan.recommended
+                      ? "0 0 0 3px rgba(25,118,210,0.15)"
+                      : "none",
+                    position: "relative",
+                    overflow: "visible",
+                    transition: "0.3s ease",
+                    "&:hover": {
+                      border: plan.recommended ? "2px solid #1565c0" : "1px solid black",
+                      transform: "translateY(-6px)",
+                      boxShadow: plan.recommended
+                        ? "0 0 0 3px rgba(25,118,210,0.3), 0 12px 32px rgba(25,118,210,0.15)"
+                        : "0 10px 30px rgba(0,0,0,0.08)",
+                    },
                   }}
                 >
+                  {/* Recommended Badge — top-right border pill */}
                   {plan.recommended && (
-                    <Typography
+                    <Box
                       sx={{
-                        bgcolor: "primary.main",
+                        position: "absolute",
+                        top: -13,
+                        right: 16,
+                        bgcolor: "#1976d2",
                         color: "#fff",
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        fontSize: 12,
-                        width: "fit-content",
-                        mb: 1,
+                        px: 1.5,
+                        py: 0.3,
+                        borderRadius: "20px",
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        letterSpacing: "0.5px",
+                        textTransform: "uppercase",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                        boxShadow: "0 2px 8px rgba(25,118,210,0.4)",
+                        zIndex: 3,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      Recommended
-                    </Typography>
+                      ★ Recommended
+                    </Box>
                   )}
 
-                  <Typography variant="h6" fontWeight={700}>
-                    {plan.title}
-                  </Typography>
-
-                  <Typography variant="h4" fontWeight={800} mt={1}>
-                    {plan.price}
-                  </Typography>
-
-                  <Typography color="text.secondary" mt={1}>
-                    {plan.subtitle}
-                  </Typography>
-
-                  <Divider sx={{ my: 2 }} />
-
-                  <Box sx={{ flex: 1 }}>
-                    {plan.features.map((f, idx) => (
-                      <Typography key={idx} fontSize={14} sx={{ mb: 1 }}>
-                        • {f}
-                      </Typography>
-                    ))}
-                  </Box>
-
-                  <Button
-                    fullWidth
-                    variant={plan.recommended ? "contained" : "outlined"}
-                    sx={{ mt: "auto" }}
-                    onClick={() =>
-                      plan.title === "Enterprise Plan"
-                        ? navigate("/contact-us")
-                        : navigate("/login")
-                    }
+                  <CardContent
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      p: 3,
+                      "&:last-child": { pb: 3 }
+                    }}
                   >
-                    {plan.title === "Enterprise Plan"
-                      ? "Contact Sales"
-                      : "Get Started"}
-                  </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          )))}
-        </Grid>
+                    <Typography variant="h5" fontWeight={800} sx={{ lineHeight: 1.2, textAlign: "left" }}>
+                      {plan.title}
+                    </Typography>
+
+                    <Typography color="text.secondary" fontSize={13} sx={{ mt: 0.5, mb: 1, textAlign: "left" }}>
+                      {plan.subtitle}
+                    </Typography>
+
+                    <Typography variant="h4" fontWeight={900} sx={{ mt: 1.5, mb: 2.5, textAlign: "left", color: plan.recommended ? "#1976d2" : "inherit" }}>
+                      {plan.price}
+                    </Typography>
+
+                    {/* Checklist features styling with green checkmarks */}
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1.2, wordBreak: "break-word" }}>
+                      {plan.features.map((f, idx) => (
+                        <Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1.2 }}>
+                          <CheckIcon sx={{ color: plan.recommended ? "#1976d2" : "success.main", fontSize: 16, mt: 0.3 }} />
+                          <Typography fontSize={13.5} color="text.primary" sx={{ textAlign: "left", lineHeight: 1.3 }}>
+                            {f}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+
+                    <Box sx={{ mt: "auto", pt: "30px" }}>
+                      <Button
+                        fullWidth
+                        variant={plan.recommended ? "contained" : "outlined"}
+                        sx={{
+                          py: 1.2,
+                          borderRadius: "10px",
+                          fontWeight: 700,
+                          textTransform: "none",
+                          fontSize: 13.5,
+                          ...(plan.recommended && {
+                            bgcolor: "#1976d2",
+                            color: "#fff",
+                            "&:hover": { bgcolor: "#1565c0" },
+                          }),
+                        }}
+                        onClick={() =>
+                          plan.title === "Enterprise Plan"
+                            ? navigate("/contact-us")
+                            : navigate("/login")
+                        }
+                      >
+                        {plan.title === "Enterprise Plan"
+                          ? "Contact Sales"
+                          : "Get Started"}
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
+            )))}
+        </Box>
 
         {/* COST COMPARISON */}
         <Box sx={{ px: { xs: 2, md: 10 }, py: 6 }}>
@@ -221,7 +261,7 @@ export default function Pricing() {
                 }}
               >
                 <Typography fontWeight={700}>
-                  AI Product Shoot (AIVX)
+                  AI Product Shoot (EKODEX)
                 </Typography>
                 <Typography mt={1}>• Instant generation</Typography>
                 <Typography>• No studio required</Typography>
@@ -230,61 +270,6 @@ export default function Pricing() {
               </Card>
             </Grid>
           </Grid>
-        </Box>
-        {/* FAQ */}
-        <Box mt={10}>
-          <Typography variant="h2" fontWeight={700} textAlign="center">
-            Frequently Asked Questions
-          </Typography>
-          <Typography color="text.secondary" mt={1} textAlign="center">
-            Everything you need to know about AIVX pricing and usage.
-          </Typography>
-          <Box mt={3}>
-            {[
-              {
-                q: "What is included in image pricing?",
-                a: "AI-generated studio-quality images with selected themes and formats, ready for ecommerce and marketing use.",
-              },
-              {
-                q: "What video lengths are supported?",
-                a: "We support high-quality 5-second and 15-second product videos optimized for reels and ads.",
-              },
-              {
-                q: "Can I use the images and videos for commercial purposes?",
-                a: "Yes. All generated images and videos can be used for ecommerce, ads, and branding.",
-              },
-              {
-                q: "Do I need professional product photos to start?",
-                a: "No. A simple product image is enough to generate high-quality outputs.",
-              },
-              {
-                q: "Are there any hidden costs?",
-                a: "No. Pricing is transparent with no hidden charges.",
-              },
-            ].map((item, i) => (
-              <Card
-                key={i}
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  cursor: "pointer",
-                  transition: "0.3s",
-                  "&:hover": { boxShadow: 3 },
-                }}
-                onClick={() => toggleFAQ(i)}
-              >
-                {/* QUESTION */}
-                <Typography fontWeight={600}>{item.q}</Typography>
-
-                {/* ANSWER (TOGGLE) */}
-                {openIndex === i && (
-                  <Typography mt={1} color="text.secondary">
-                    {item.a}
-                  </Typography>
-                )}
-              </Card>
-            ))}
-          </Box>
         </Box>
       </Box>
 

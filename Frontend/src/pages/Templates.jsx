@@ -13,6 +13,10 @@ import {
   TextField,
   InputAdornment,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 
 import axios from "axios";
@@ -26,6 +30,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
+import EditIcon from "@mui/icons-material/Edit";
 import { useThemeContext } from "../context/ThemeContext";
 
 export default function TemplatesPage() {
@@ -46,6 +51,10 @@ export default function TemplatesPage() {
   const [activeTemplate, setActiveTemplate] = useState(null);
 
   const [searchText, setSearchText] = useState("");
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editShotsFiles, setEditShotsFiles] = useState([]);
+  const [uploadingShots, setUploadingShots] = useState(false);
 
   const queryParams = new URLSearchParams(location.search);
   const selectedCategory = queryParams.get("category") || "";
@@ -136,55 +145,47 @@ export default function TemplatesPage() {
     fetchCategories();
   }, [selectedCategory, selectedSubcategory, token]);
   /* ---------------- FETCH TEMPLATES ---------------- */
-  useEffect(() => {
+  const fetchTemplates = async () => {
     if (!categories.length || !token) {
       setLoading(false);
       return;
     }
+    try {
+      setLoading(true);
 
-    const fetchTemplates = async () => {
-      try {
-        setLoading(true);
+      const requests = categories.map((cat) =>
+        axios.get(`${API_URL}/templates/by-category/${cat.slug}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      );
 
-        const requests = categories.map((cat) =>
-          axios.get(`${API_URL}/templates/by-category/${cat.slug}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        );
+      const responses = await Promise.all(requests);
 
-        const responses = await Promise.all(requests);
+      const grouped = {};
 
-        const grouped = {};
+      responses.forEach((res, index) => {
+        grouped[categories[index].slug] = res.data || [];
+      });
 
-        responses.forEach((res, index) => {
-          grouped[categories[index].slug] = res.data || [];
-        });
+      setTemplatesByCategory(grouped);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
+  };
 
-        setTemplatesByCategory(grouped);
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchTemplates();
   }, [categories]);
   const showShotTemplate = () => {
     if (!activeTemplate) return;
-
-    // Check if shots exist
-    if (
-      activeTemplate.shots &&
-      Array.isArray(activeTemplate.shots) &&
-      activeTemplate.shots.length > 0
-    ) {
-      navigate(`/template-shots/${activeTemplate._id}`);
-    } else {
-      alert("No shot images available for this template.");
-    }
-
+    navigate(`/template-shots/${activeTemplate._id}`);
     closeMenu();
+  };
+
+  const handleTemplateClick = (template) => {
+    navigate(`/template-shots/${template._id}`);
   };
 
   /* ---------------- MENU ---------------- */
@@ -226,6 +227,40 @@ export default function TemplatesPage() {
       console.error(err);
     }
   };
+
+  const handleUploadShots = async () => {
+    if (!activeTemplate) return;
+    try {
+      setUploadingShots(true);
+      const formData = new FormData();
+      editShotsFiles.forEach((file) => {
+        formData.append("shots", file);
+      });
+
+      await axios.put(
+        `${API_URL}/template-shots/update-shots/${activeTemplate._id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      alert("Template shots updated successfully! 🎉");
+      setEditModalOpen(false);
+      setEditShotsFiles([]);
+      setActiveTemplate(null);
+      fetchTemplates();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to upload shots");
+    } finally {
+      setUploadingShots(false);
+    }
+  };
+
   const handleSearch = async (value) => {
     setSearchText(value);
 
@@ -241,8 +276,8 @@ export default function TemplatesPage() {
         {
           headers: token
             ? {
-                Authorization: `Bearer ${token}`,
-              }
+              Authorization: `Bearer ${token}`,
+            }
             : {},
         },
       );
@@ -289,9 +324,9 @@ export default function TemplatesPage() {
       const matchesSubcategory =
         !selectedSubcategory ||
         subcategoryName.toLowerCase() ===
-          decodeURIComponent(selectedSubcategory).toLowerCase() ||
+        decodeURIComponent(selectedSubcategory).toLowerCase() ||
         template.subcategorySlug?.toLowerCase() ===
-          decodeURIComponent(selectedSubcategory).toLowerCase();
+        decodeURIComponent(selectedSubcategory).toLowerCase();
 
       return matchesSearch && matchesSubcategory;
     });
@@ -512,7 +547,7 @@ export default function TemplatesPage() {
                         zIndex: 10,
                       },
                       "& .slick-next": {
-                        right: "-15px",
+                        right: "-30px",
                         zIndex: 10,
                       },
                     }}
@@ -534,28 +569,31 @@ export default function TemplatesPage() {
                     {/* TEMPLATE SLIDER */}
                     <Slider {...templateSettings}>
                       {templates.map((template) => (
-                        <Box key={template._id}>
+                        <Box 
+                          key={template._id} 
+                          sx={{ px: 1, cursor: "pointer" }}
+                          onClick={() => handleTemplateClick(template)}
+                        >
                           <Card
-                            onClick={() =>
-                              navigate(`/template-shots/${template._id}`)
-                            }
                             sx={{
-                              width: 250,
+                              width: "100%",
                               height: 220,
                               borderRadius: 3,
                               overflow: "hidden",
                               position: "relative",
-                              cursor: "pointer",
-                              transition: "0.3s",
+                              transition: "all 0.3s ease",
                               "&:hover": {
-                                transform: "translateY(-5px)",
-                                boxShadow: 6,
+                                transform: "scale(1.02)",
+                                boxShadow: 8,
                               },
                             }}
                           >
                             {/* MENU BUTTON */}
                             <IconButton
-                              onClick={(e) => openMenu(e, template)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openMenu(e, template);
+                              }}
                               sx={{
                                 position: "absolute",
                                 top: 5,
@@ -569,13 +607,12 @@ export default function TemplatesPage() {
                             </IconButton>
 
                             {/* TEMPLATE IMAGE */}
-                            {/* TEMPLATE IMAGE */}
                             <CardMedia
                               component="img"
                               image={
                                 template.imageUrl
-                                  ? `${TEMP_URL}${template.imageUrl}`
-                                  : `${TEMP_URL}/uploads/${template.categorySlug}/${template.subcategoryName}/${template.fileName}`
+                                  ? template.imageUrl.startsWith("http") ? template.imageUrl : `${TEMP_URL}${template.imageUrl}`
+                                  : `${TEMP_URL}/uploads/${template.categorySlug || category.slug}/${template.subcategorySlug || subcategoryName}/${template.fileName}`
                               }
                               alt={
                                 template.name ||
@@ -593,6 +630,16 @@ export default function TemplatesPage() {
                               }}
                             />
                           </Card>
+                          <Typography
+                            variant="body2"
+                            fontWeight={500}
+                            mt={1}
+                            textAlign="center"
+                            noWrap
+                            color={textColor}
+                          >
+                            {template.name || template.fileName}
+                          </Typography>
                         </Box>
                       ))}
                     </Slider>
@@ -604,23 +651,144 @@ export default function TemplatesPage() {
         })
       )}
       {/* MENU */}
-      // Replace your Menu section with this
+      {/* // Replace your Menu section with this */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={closeMenu}>
-        {/* Show option only if shots exist */}
-        {activeTemplate?.shots &&
-          Array.isArray(activeTemplate.shots) &&
-          activeTemplate.shots.length > 0 && (
-            <MenuItem onClick={showShotTemplate}>
-              <EditIcon sx={{ mr: 1 }} />
-              Show
-            </MenuItem>
-          )}
+        <MenuItem onClick={showShotTemplate}>
+          <EditIcon sx={{ mr: 1 }} />
+          Show Shots
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null); // Close the menu dropdown only, keep activeTemplate
+            setEditShotsFiles([]);
+            setEditModalOpen(true);
+          }}
+        >
+          <EditIcon sx={{ mr: 1 }} />
+          Edit Shots
+        </MenuItem>
 
         <MenuItem onClick={deleteTemplate} sx={{ color: "red" }}>
           <DeleteIcon sx={{ mr: 1 }} />
           Delete
         </MenuItem>
       </Menu>
+
+      {/* EDIT SHOTS DIALOG */}
+      <Dialog
+        open={editModalOpen}
+        onClose={() => {
+          if (!uploadingShots) {
+            setEditModalOpen(false);
+            setActiveTemplate(null);
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: cardColor,
+            color: textColor,
+            border: `1px solid ${borderColor}`,
+            borderRadius: 3,
+            p: 1
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
+          Edit Template Shots
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: darkMode ? "#94a3b8" : "#4b5563", mb: 3 }}>
+            Upload variation shot images for the template: <strong>{activeTemplate?.name || activeTemplate?.fileName}</strong>
+          </Typography>
+
+          <Box
+            sx={{
+              border: `2px dashed ${borderColor}`,
+              borderRadius: 2,
+              p: 4,
+              textAlign: "center",
+              cursor: "pointer",
+              bgcolor: darkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
+              "&:hover": {
+                borderColor: "#1976d2",
+                bgcolor: darkMode ? "rgba(25, 118, 210, 0.08)" : "rgba(25, 118, 210, 0.04)"
+              }
+            }}
+            component="label"
+          >
+            <input
+              type="file"
+              hidden
+              multiple
+              accept="image/*"
+              onChange={(e) => setEditShotsFiles(Array.from(e.target.files))}
+            />
+            <Typography variant="subtitle1" fontWeight={600} color="#1976d2" mb={0.5}>
+              Select Shot Images
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Upload multiple variations of this template
+            </Typography>
+          </Box>
+
+          {editShotsFiles.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle2" fontWeight={600} mb={1}>
+                Selected Files ({editShotsFiles.length}):
+              </Typography>
+              <Stack spacing={1} sx={{ maxHeight: 150, overflowY: "auto" }}>
+                {editShotsFiles.map((file, i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      p: 1,
+                      bgcolor: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+                      borderRadius: 1,
+                      border: `1px solid ${borderColor}`
+                    }}
+                  >
+                    <Typography variant="caption" noWrap sx={{ maxWidth: "80%" }}>
+                      {file.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setEditModalOpen(false)}
+            disabled={uploadingShots}
+            sx={{ color: textColor }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleUploadShots}
+            disabled={uploadingShots || editShotsFiles.length === 0}
+            sx={{
+              bgcolor: "#1976d2",
+              color: "#fff",
+              "&:hover": {
+                bgcolor: "#1565c0"
+              }
+            }}
+          >
+            {uploadingShots ? "Saving..." : "Save Shots"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

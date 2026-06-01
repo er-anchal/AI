@@ -1,7 +1,10 @@
 import express from 'express';
 import upload from '../middleware/uploadMiddleware.js';
+import faqUpload from '../middleware/faqUploadMiddleware.js';
 import axios from 'axios';
 import fs from 'fs';
+import TemplateSubCategory from '../models/SubCategory.js';
+import TemplateCategory from '../models/TemplateCategory.js';
 
 const router = express.Router();
 
@@ -14,22 +17,78 @@ router.post('/scan-jewellery', upload.single('imageFile'), async (req, res) => {
         const fileUrl = `/uploads/images/${req.file.filename}`;
         const localPath = req.file.path;
 
-        // Valid subcategories list
-        const categories = ["rings", "pendants", "bangles", "articles"];
-        const subcategoryNameMap = {
-            rings: "Rings",
-            pendants: "Pendants",
-            bangles: "Bangles",
-            articles: "Articles"
-        };
+        const isVideoMode = req.query.mode === 'video';
 
+        let classificationPrompt = '';
+        let spaceKeys = [];
+        let spaceSlugMap = {};
+
+        if (isVideoMode) {
+            classificationPrompt = `You are an elite, highly specialized jewellery classification expert.
+Your job is to identify the jewellery item shown in the image and classify it into EXACTLY one of these subcategories: Rings, Pendants, Bangles, Articles.
+
+For reference:
+- "Rings" matches finger rings or thumb rings.
+- "Pendants" matches necklaces, chokers, mangalsutras, neck sets, or neck pendants.
+- "Bangles" matches bangles, bracelets, or kadas.
+- "Articles" matches any other jewellery like nose pins, earrings, chains, anklets, hip belts, bajubandh, tika, or any miscellaneous accessories.
+
+Return ONLY the exact single string matching the selected category from the list above: Rings, Pendants, Bangles, or Articles. Do not provide any introduction, description, markdown, bullet points, or punctuation. Make a highly confident and accurate choice based on visual evidence.`;
+        } else {
+            // ─── DYNAMIC: Fetch all active subcategories from DB ──────────────────
+            // Find the "Jewellery" category first (or all categories if you want)
+            const jewelleryCategory = await TemplateCategory.findOne({
+                name: { $regex: /jewel/i },
+                isActive: 0
+            });
+
+            let dbSubcategories = [];
+            if (jewelleryCategory) {
+                dbSubcategories = await TemplateSubCategory.find({
+                    categoryId: jewelleryCategory._id,
+                    isActive: 0
+                }).select('name slug').lean();
+            } else {
+                // Fallback: fetch ALL active subcategories across all categories
+                dbSubcategories = await TemplateSubCategory.find({ isActive: 0 })
+                    .select('name slug').lean();
+            }
+
+            if (!dbSubcategories.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No active subcategories found in the database. Please add subcategories first.'
+                });
+            }
+
+            const subcategoryMap = {}; // slug (hyphenated) → { name, slug }
+
+            for (const sub of dbSubcategories) {
+                const slug = sub.slug.toLowerCase().trim();       // e.g. "nose-pin"
+                const spaceSlug = slug.replace(/-/g, ' ');             // e.g. "nose pin"
+                const displayName = sub.name.toUpperCase().trim();     // e.g. "NOSE PIN"
+
+                subcategoryMap[slug] = { name: displayName, slug };
+                spaceSlugMap[spaceSlug] = { name: displayName, slug };
+            }
+
+            spaceKeys = Object.keys(spaceSlugMap).sort((a, b) => b.length - a.length);
+
+            const subcategoryList = spaceKeys.map(k => spaceSlugMap[k].name).join(', ');
+            classificationPrompt = `You are an elite, highly specialized jewellery classification expert.
+Your job is to identify the jewellery item shown in the image and classify it into EXACTLY one of these subcategories: ${subcategoryList}.
+
+Return ONLY the exact single string matching the selected category from the list above. Do not provide any introduction, description, markdown, bullet points, or punctuation. Make a highly confident and accurate choice based on visual evidence.`;
+        }
+
+        // ─── API KEYS ──────────────────────────────────────────────────────────
         const openaiApiKey = process.env.OPENAI_API_KEY;
         const geminiApiKey = process.env.GEMINI_API_KEY;
 
         if (!openaiApiKey && !geminiApiKey) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'No active API Key found! Please add GEMINI_API_KEY (100% free from Google AI Studio) or OPENAI_API_KEY in your .env file and restart the server.' 
+            return res.status(400).json({
+                success: false,
+                message: 'No active API Key found! Please add GEMINI_API_KEY or OPENAI_API_KEY in your .env file and restart the server.'
             });
         }
 
@@ -41,84 +100,76 @@ router.post('/scan-jewellery', upload.single('imageFile'), async (req, res) => {
         const imageBase64 = fs.readFileSync(localPath, { encoding: 'base64' });
         const mimeType = req.file.mimetype || 'image/jpeg';
 
-        // 1. Prefer Google Gemini (Free Vision Tier)
+        // ─── 1. PREFER GOOGLE GEMINI — cascade through models on quota errors ──
         if (geminiApiKey) {
-            try {
-                console.log("Using Google Gemini Vision API for classification...");
-                const response = await axios.post(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
-                    {
-                        contents: [
-                            {
-                                parts: [
-                                    {
-                                        text: `You are an elite, highly specialized jewellery classification expert.
-Your job is to identify the jewellery item shown in the image and classify it into EXACTLY one of these four categories: Rings, Pendants, Bangles, Articles.
+            // Try models in order; on 429 (quota exceeded) move to the next model.
+            // Each model has its own free-tier quota bucket.
+            const geminiModels = [
+                'gemini-2.0-flash-lite',   // lightest, own quota bucket
+                'gemini-flash-latest',      // rolling alias, often separate quota
+                'gemini-2.5-flash',         // best quality, try 3rd
+                'gemini-2.0-flash',         // original choice, try last
+            ];
 
-Read these extremely detailed visual rules and definitions to make your choice:
+            let lastGeminiError = null;
 
-1. RINGS (Fingerwear):
-- Structure: A small circular band (torus shape) designed to be worn on a finger.
-- Proportions: The inner diameter is small (typically around 15mm to 22mm / 0.6 to 0.8 inches).
-- Characteristics: Often features a prominent gemstone, solitaire diamond, bezel, or decorative mount (setting) on top of the shank/band.
-- Common Views: Seen from top-down showing the gem, side-profile showing the band loop, or tilted 3D angles showing both the band and the setting.
-- Keywords: Wedding band, engagement ring, signet ring, eternity loop, statement finger ring.
-
-2. PENDANTS (Neckwear Drops):
-- Structure: A suspended decorative ornament designed to hang from a necklace, chain, or cord.
-- Key Feature: Look closely at the top of the piece for a "bail" (a small metal loop, hook, eyelet, or passage for a chain to slip through).
-- Proportions: Typically vertically oriented, flat or semi-flat back, with a decorative front face. It is a standalone focal piece, NOT a finger ring.
-- Comparison: If it is circular but has a bail/loop at the very top for a chain, it is a Pendant, NOT a Ring!
-- Keywords: Locket, medallion, charm, drop piece, necklace centerpiece, talisman, cross or pendant bail.
-
-3. BANGLES (Wristwear):
-- Structure: A large, rigid circular or semi-circular band designed to be worn on the wrist or forearm.
-- Proportions: The inner diameter is large (typically 50mm to 75mm / 2 to 3 inches), which is much larger than a finger ring.
-- Characteristics: Can be a solid closed circle, an open-ended cuff, or hinged with a clasp. Often decorated uniformly around the circumference or worn in multiples (stacks).
-- Keywords: Rigid bracelet, kada, wrist cuff, wrist hoop, armlet.
-
-4. ARTICLES (Earrings, Standalone, or Miscellaneous):
-- Structure: Small ornaments worn on other body parts, loose items, or complex accessories.
-- Key Subcategory - EARRINGS: Items worn on the ears (studs, hoops, drops, jhumkas, chandbalis). They usually feature a post, stud, hook, or clip backing to attach to an earlobe. Often displayed as a pair.
-- Other Items: Nose rings (nath), brooches (pins), hair ornaments, loose gemstones/diamonds, or utility pieces.
-- Catch-All: If the item is clearly none of the above (e.g. it is an earring or a loose gem), classify it as Articles.
-
-Return ONLY the exact single word matching the selected category: "Rings", "Pendants", "Bangles", or "Articles". Do not provide any introduction, description, markdown, bullet points, or punctuation. Make a highly confident and accurate choice based on the visual guidelines above.`
-                                    },
-                                    {
-                                        inlineData: {
-                                            mimeType: mimeType,
-                                            data: imageBase64
+            for (const model of geminiModels) {
+                try {
+                    console.log(`Trying Gemini model: ${model}...`);
+                    const response = await axios.post(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+                        {
+                            contents: [
+                                {
+                                    parts: [
+                                        { text: classificationPrompt },
+                                        {
+                                            inlineData: {
+                                                mimeType: mimeType,
+                                                data: imageBase64
+                                            }
                                         }
-                                    }
-                                ]
+                                    ]
+                                }
+                            ],
+                            generationConfig: {
+                                temperature: 0,
+                                maxOutputTokens: 100
                             }
-                        ],
-                        generationConfig: {
-                            temperature: 0,
-                            maxOutputTokens: 100
-                        }
-                    },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json'
                         },
-                        timeout: 15000
+                        {
+                            headers: { 'Content-Type': 'application/json' },
+                            timeout: 15000
+                        }
+                    );
+
+                    answer = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+                    console.log(`Gemini [${model}] raw response:`, answer);
+                    if (!answer) {
+                        console.log(`Gemini [${model}] full response:`, JSON.stringify(response.data, null, 2));
                     }
-                );
+                    break; // Success — stop trying further models
 
-                answer = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-                console.log("Gemini Vision raw response:", answer);
-                if (!answer) {
-                    console.log("Gemini Vision full response:", JSON.stringify(response.data, null, 2));
+                } catch (modelErr) {
+                    const status = modelErr.response?.status;
+                    const errMsg = modelErr.response?.data?.error?.message || modelErr.message;
+                    console.warn(`Gemini [${model}] failed (${status}): ${errMsg}`);
+                    lastGeminiError = errMsg;
+
+                    // Only continue cascade on quota (429) or not-found (404) errors
+                    if (status !== 429 && status !== 404) {
+                        throw new Error(`Gemini Vision analysis failed: ${errMsg}`);
+                    }
+                    // Otherwise loop to next model
                 }
-
-            } catch (geminiErr) {
-                console.error("Gemini Vision API call failed:", geminiErr.message);
-                throw new Error(`Gemini Vision analysis failed: ${geminiErr.response?.data?.error?.message || geminiErr.message}`);
             }
-        } 
-        // 2. Otherwise Fallback to OpenAI Vision
+
+            // All Gemini models exhausted their quota
+            if (!answer && !openaiApiKey) {
+                throw new Error(`All Gemini models quota exceeded. Last error: ${lastGeminiError}. Please try again later or add an OPENAI_API_KEY.`);
+            }
+        }
+        // ─── 2. FALLBACK: OPENAI VISION ──────────────────────────────────────
         else if (openaiApiKey) {
             try {
                 console.log("Using OpenAI Vision API for classification...");
@@ -131,51 +182,12 @@ Return ONLY the exact single word matching the selected category: "Rings", "Pend
                             {
                                 role: 'user',
                                 content: [
-                                    {
-                                        type: 'text',
-                                        text: `You are an elite, highly specialized jewellery classification expert.
-Your job is to identify the jewellery item shown in the image and classify it into EXACTLY one of these four categories: Rings, Pendants, Bangles, Articles.
-
-Read these extremely detailed visual rules and definitions to make your choice:
-
-1. RINGS (Fingerwear):
-- Structure: A small circular band (torus shape) designed to be worn on a finger.
-- Proportions: The inner diameter is small (typically around 15mm to 22mm / 0.6 to 0.8 inches).
-- Characteristics: Often features a prominent gemstone, solitaire diamond, bezel, or decorative mount (setting) on top of the shank/band.
-- Common Views: Seen from top-down showing the gem, side-profile showing the band loop, or tilted 3D angles showing both the band and the setting.
-- Keywords: Wedding band, engagement ring, signet ring, eternity loop, statement finger ring.
-
-2. PENDANTS (Neckwear Drops):
-- Structure: A suspended decorative ornament designed to hang from a necklace, chain, or cord.
-- Key Feature: Look closely at the top of the piece for a "bail" (a small metal loop, hook, eyelet, or passage for a chain to slip through).
-- Proportions: Typically vertically oriented, flat or semi-flat back, with a decorative front face. It is a standalone focal piece, NOT a finger ring.
-- Comparison: If it is circular but has a bail/loop at the very top for a chain, it is a Pendant, NOT a Ring!
-- Keywords: Locket, medallion, charm, drop piece, necklace centerpiece, talisman, cross or pendant bail.
-
-3. BANGLES (Wristwear):
-- Structure: A large, rigid circular or semi-circular band designed to be worn on the wrist or forearm.
-- Proportions: The inner diameter is large (typically 50mm to 75mm / 2 to 3 inches), which is much larger than a finger ring.
-- Characteristics: Can be a solid closed circle, an open-ended cuff, or hinged with a clasp. Often decorated uniformly around the circumference or worn in multiples (stacks).
-- Keywords: Rigid bracelet, kada, wrist cuff, wrist hoop, armlet.
-
-4. ARTICLES (Earrings, Standalone, or Miscellaneous):
-- Structure: Small ornaments worn on other body parts, loose items, or complex accessories.
-- Key Subcategory - EARRINGS: Items worn on the ears (studs, hoops, drops, jhumkas, chandbalis). They usually feature a post, stud, hook, or clip backing to attach to an earlobe. Often displayed as a pair.
-- Other Items: Nose rings (nath), brooches (pins), hair ornaments, loose gemstones/diamonds, or utility pieces.
-- Catch-All: If the item is clearly none of the above (e.g. it is an earring or a loose gem), classify it as Articles.
-
-Return ONLY the exact single word matching the selected category: "Rings", "Pendants", "Bangles", or "Articles". Do not provide any introduction, description, markdown, bullet points, or punctuation. Make a highly confident and accurate choice based on the visual guidelines above.`
-                                    },
-                                    {
-                                        type: 'image_url',
-                                        image_url: {
-                                            url: base64Url
-                                        }
-                                    }
+                                    { type: 'text', text: classificationPrompt },
+                                    { type: 'image_url', image_url: { url: base64Url } }
                                 ]
                             }
                         ],
-                        max_tokens: 10,
+                        max_tokens: 15,
                         temperature: 0
                     },
                     {
@@ -196,13 +208,66 @@ Return ONLY the exact single word matching the selected category: "Rings", "Pend
             }
         }
 
-        if (answer) {
-            const matchedSlug = answer.toLowerCase().replace(/[^a-z]/g, '');
-            for (const cat of categories) {
-                if (matchedSlug.includes(cat) || cat.includes(matchedSlug) || matchedSlug.includes(cat.slice(0, -1))) {
-                    detectedSlug = cat;
-                    detectedName = subcategoryNameMap[cat];
-                    break;
+        // ─── MATCHING: AI response → DB subcategory ───────────────────────────
+        if (isVideoMode) {
+            if (answer) {
+                const cleaned = answer.toLowerCase().trim();
+                if (cleaned.includes("ring")) {
+                    detectedSlug = "rings";
+                    detectedName = "Rings";
+                } else if (cleaned.includes("pendant") || cleaned.includes("neck") || cleaned.includes("choker") || cleaned.includes("mangal")) {
+                    detectedSlug = "pendants";
+                    detectedName = "Pendants";
+                } else if (cleaned.includes("bangle") || cleaned.includes("bracelet") || cleaned.includes("kada")) {
+                    detectedSlug = "bangles";
+                    detectedName = "Bangles";
+                } else {
+                    detectedSlug = "articles";
+                    detectedName = "Articles";
+                }
+            }
+            if (!detectedSlug) {
+                detectedSlug = "articles";
+                detectedName = "Articles";
+            }
+        } else {
+            // 1. Clean: lowercase, trim, remove punctuation but KEEP spaces
+            if (answer) {
+                const cleaned = answer.toLowerCase().trim().replace(/[^a-z ]/g, '').trim();
+                console.log("Cleaned AI answer:", cleaned);
+
+                // Step 1: Exact match against space-slug keys (longest first → most specific wins)
+                for (const key of spaceKeys) {
+                    if (cleaned === key) {
+                        detectedSlug = spaceSlugMap[key].slug;
+                        detectedName = spaceSlugMap[key].name;
+                        break;
+                    }
+                }
+
+                // Step 2: Whole-word boundary match (handles "It is a BANGLE." style responses)
+                if (!detectedSlug) {
+                    for (const key of spaceKeys) {
+                        const escapedKey = key.replace(/ /g, '\\s+');
+                        const boundary = new RegExp(`(^|\\s)${escapedKey}(\\s|$)`);
+                        if (boundary.test(cleaned)) {
+                            detectedSlug = spaceSlugMap[key].slug;
+                            detectedName = spaceSlugMap[key].name;
+                            break;
+                        }
+                    }
+                }
+
+                // Step 3: Space-stripped exact match (last resort for single-word responses)
+                if (!detectedSlug) {
+                    const cleanedNoSpaces = cleaned.replace(/\s/g, '');
+                    for (const key of spaceKeys) {
+                        if (cleanedNoSpaces === key.replace(/\s/g, '')) {
+                            detectedSlug = spaceSlugMap[key].slug;
+                            detectedName = spaceSlugMap[key].name;
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -210,9 +275,11 @@ Return ONLY the exact single word matching the selected category: "Rings", "Pend
         if (!detectedSlug) {
             return res.status(400).json({
                 success: false,
-                message: `AI vision analyzed the image but returned '${answer}', which could not be mapped to one of the four categories: Rings, Pendants, Bangles, Articles.`
+                message: `AI analyzed the image but returned '${answer}', which did not match any subcategory in the database.`
             });
         }
+
+        console.log(`Detected subcategory: ${detectedName} (slug: ${detectedSlug})`);
 
         res.status(200).json({
             success: true,
@@ -227,9 +294,9 @@ Return ONLY the exact single word matching the selected category: "Rings", "Pend
 
     } catch (error) {
         console.error('Scan jewellery Error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: error.message || 'Server error during scan-jewellery' 
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Server error during scan-jewellery'
         });
     }
 });
@@ -246,7 +313,7 @@ router.post('/image', upload.single('imageFile'), (req, res) => {
             success: true,
             message: 'Image successfully saved!',
             filePath: fileUrl,
-            localPath: req.file.path 
+            localPath: req.file.path
         });
 
     } catch (error) {
@@ -255,7 +322,6 @@ router.post('/image', upload.single('imageFile'), (req, res) => {
     }
 });
 
-import faqUpload from '../middleware/faqUploadMiddleware.js';
 
 router.post('/faq-media', faqUpload.single('file'), (req, res) => {
     try {

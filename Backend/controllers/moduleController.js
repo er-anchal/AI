@@ -1,14 +1,15 @@
 import Module from "../models/Module.js";
+import SubModule from "../models/SubModule.js";
 
 export const createModule = async (req, res) => {
   try {
-    const { name, path, icon = "", description = "", sortOrder = 0 } = req.body;
+    const { name, path = "", icon = "", description = "", sortOrder = 0 } = req.body;
 
     // Validate required fields
-    if (!name || !path) {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: "Name and Path are required",
+        message: "Module Name is required",
       });
     }
 
@@ -21,18 +22,29 @@ export const createModule = async (req, res) => {
       });
     }
 
-    // Check duplicate path
-    const existingPath = await Module.findOne({ path: path.trim() });
-    if (existingPath) {
+    // Check duplicate path if path is supplied
+    if (path && path.trim()) {
+      const existingPath = await Module.findOne({ path: path.trim() });
+      if (existingPath) {
+        return res.status(400).json({
+          success: false,
+          message: "Module path already exists",
+        });
+      }
+    }
+
+    // Enforce unique sortOrder
+    const existingSort = await Module.findOne({ sortOrder: Number(sortOrder) || 0 });
+    if (existingSort) {
       return res.status(400).json({
         success: false,
-        message: "Module path already exists",
+        message: `Sort order '${sortOrder}' is already assigned to the module '${existingSort.name}'`,
       });
     }
 
     const module = await Module.create({
       name: name.trim(),
-      path: path.trim(),
+      path: path ? path.trim() : "",
       icon,
       description,
       sortOrder: Number(sortOrder) || 0,
@@ -55,14 +67,28 @@ export const createModule = async (req, res) => {
 };
 export const getModules = async (req, res) => {
   try {
-    const modules = await Module.find({}).lean();
+    const modules = await Module.find({ isActive: { $ne: "false" } }).sort({ sortOrder: 1 }).lean();
 
-    // console.log("RAW DATA:", modules);
+    // Query active submodules for each module dynamically
+    const populatedModules = await Promise.all(
+      modules.map(async (mod) => {
+        const subModules = await SubModule.find({
+          parentModule: mod._id,
+          isActive: { $ne: "false" },
+        })
+          .sort({ sortOrder: 1 })
+          .lean();
+        return {
+          ...mod,
+          subModules,
+        };
+      })
+    );
 
     res.json({
       success: true,
-      count: modules.length,
-      data: modules,
+      count: populatedModules.length,
+      data: populatedModules,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -94,8 +120,44 @@ export const getModuleById = async (req, res) => {
 // UPDATE MODULE
 export const updateModule = async (req, res) => {
   try {
+    const { id } = req.params;
+    const { name, path, sortOrder } = req.body;
+
+    if (sortOrder !== undefined) {
+      const existingSort = await Module.findOne({
+        sortOrder: Number(sortOrder),
+        _id: { $ne: id }
+      });
+      if (existingSort) {
+        return res.status(400).json({
+          success: false,
+          message: `Sort order '${sortOrder}' is already assigned to the module '${existingSort.name}'`,
+        });
+      }
+    }
+
+    if (name) {
+      const existingName = await Module.findOne({ name: name.trim(), _id: { $ne: id } });
+      if (existingName) {
+        return res.status(400).json({
+          success: false,
+          message: "Module name already exists",
+        });
+      }
+    }
+
+    if (path && path.trim()) {
+      const existingPath = await Module.findOne({ path: path.trim(), _id: { $ne: id } });
+      if (existingPath) {
+        return res.status(400).json({
+          success: false,
+          message: "Module path already exists",
+        });
+      }
+    }
+
     const module = await Module.findByIdAndUpdate(
-      req.params.id,
+      id,
       {
         ...req.body,
         modifiedAt: new Date(),
@@ -124,18 +186,10 @@ export const updateModule = async (req, res) => {
   }
 };
 
-// DELETE MODULE (SOFT DELETE)
+// DELETE MODULE (HARD DELETE)
 export const deleteModule = async (req, res) => {
   try {
-    const module = await Module.findByIdAndUpdate(
-      req.params.id,
-      {
-        isActive: false,
-        modifiedAt: new Date(),
-        modifiedOn: new Date().toLocaleString(),
-      },
-      { new: true },
-    );
+    const module = await Module.findByIdAndDelete(req.params.id);
 
     if (!module) {
       return res.status(404).json({
@@ -144,9 +198,12 @@ export const deleteModule = async (req, res) => {
       });
     }
 
+    // Hard-delete all associated child submodules to keep clean integrity!
+    await SubModule.deleteMany({ parentModule: req.params.id });
+
     res.json({
       success: true,
-      message: "Module deleted successfully",
+      message: "Module and its sub-modules permanently deleted successfully",
     });
   } catch (error) {
     res.status(500).json({

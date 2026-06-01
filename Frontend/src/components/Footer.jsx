@@ -11,6 +11,7 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import PrivacyTipIcon from "@mui/icons-material/PrivacyTip";
 import GavelIcon from "@mui/icons-material/Gavel";
 import ContactMailIcon from "@mui/icons-material/ContactMail";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
 const Footer = () => {
   const theme = useTheme();
@@ -69,6 +70,10 @@ const Footer = () => {
 
           <FooterLink to="/contact-us" icon={<ContactMailIcon />}>
             Contact Us
+          </FooterLink>
+
+          <FooterLink to="/faq" icon={<HelpOutlineIcon />}>
+            FAQs
           </FooterLink>
         </Grid>
 

@@ -30,6 +30,50 @@ export default function AdminRoute({ children }) {
     return children;
   }
 
+  const cleanPath = location.pathname.toLowerCase().trim();
+
+  // Strict check: Access to the Role Access Matrix panel is restricted strictly to ADMIN & SUPER ADMIN
+  if (cleanPath === "/roleaccess") {
+    if (user.role !== "ADMIN" && user.role !== "SUPER ADMIN") {
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  // Allow all authorized administrators to manage blogs
+  if (cleanPath === "/admin/blog" && (user.role === "ADMIN" || user.role === "SUPER ADMIN")) {
+    return children;
+  }
+
+  // Allow standard users to access their dashboard, and admins to access admin dashboard / configurator
+  if (cleanPath === "/dashboard" && user) {
+    return children;
+  }
+
+  // Allow only SUPER ADMIN to access the Admin Dashboard
+  if (cleanPath === "/admin/dashboard" && user.role === "SUPER ADMIN") {
+    return children;
+  }
+
+  // Dynamic Route Access Delegation:
+  // - If the user has access to /templates, automatically allow /template-shots and /editor sub-routes.
+  // - If the user has access to /dashboard, /templates, or /my-designs, automatically allow /design sub-routes.
+  const lowerPaths = allowedPaths.map(p => p.toLowerCase().trim());
+  const hasTemplatesAccess = lowerPaths.includes("/templates");
+  const hasDashboardAccess = lowerPaths.includes("/dashboard");
+  const hasMyDesignsAccess = lowerPaths.includes("/my-designs");
+
+  if (cleanPath.startsWith("/template-shots") && (hasTemplatesAccess || hasDashboardAccess)) {
+    return children;
+  }
+
+  if (cleanPath.startsWith("/editor") && hasTemplatesAccess) {
+    return children;
+  }
+
+  if (cleanPath.startsWith("/design") && (hasDashboardAccess || hasTemplatesAccess || hasMyDesignsAccess)) {
+    return children;
+  }
+
   // Verify route access against dynamic permissions matrix
   const isAllowed = allowedPaths.some((modPath) => {
     const currentPath = location.pathname.toLowerCase().trim();

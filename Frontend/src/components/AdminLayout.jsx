@@ -1,9 +1,12 @@
 import React from "react";
 import { Box } from "@mui/material";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 
 const AdminLayout = () => {
+  const location = useLocation();
+  const isConversationsPage = location.pathname === "/admin/chatbot-conversations";
+
   return (
     <Box 
       sx={{ 
@@ -22,9 +25,10 @@ const AdminLayout = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, sm: 4 },
+          p: isConversationsPage ? 0 : { xs: 2, sm: 4 },
           width: "100%",
-          boxSizing: "border-box"
+          boxSizing: "border-box",
+          overflow: isConversationsPage ? "hidden" : "visible"
         }}
       >
         <Outlet />

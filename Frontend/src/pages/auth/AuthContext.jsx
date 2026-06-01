@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [allowedModules, setAllowedModules] = useState([]);
   const [allowedPaths, setAllowedPaths] = useState([]);
+  const [allowedNavItems, setAllowedNavItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setAllowedModules([]);
         setAllowedPaths([]);
+        setAllowedNavItems([]);
         setLoading(false);
         return;
       }
@@ -35,19 +37,29 @@ export const AuthProvider = ({ children }) => {
 
         // 2. Fetch all modules and role access in parallel for speed
         const [resModules, resUserAccess, resRoleAccess] = await Promise.all([
-          axios.get(`${API_URL}/modules`).catch(() => ({ data: { data: [] } })),
-          axios.get(`${API_URL}/role-access/${currentUser._id || currentUser.id}`).catch(() => ({ data: null })),
-          axios.get(`${API_URL}/role-access/role/${currentUser.role}`).catch(() => ({ data: null }))
+          axios.get(`${API_URL}/modules`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => ({ data: { data: [] } })),
+          axios.get(`${API_URL}/role-access/${currentUser._id || currentUser.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => ({ data: null })),
+          axios.get(`${API_URL}/role-access/role/${currentUser.role}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => ({ data: null }))
         ]);
 
         const allModules = resModules.data?.data || [];
 
         // Check user override first, then fall back to role access
         let moduleAccess = [];
-        if (resUserAccess.data && resUserAccess.data.moduleAccess?.length > 0) {
-          moduleAccess = resUserAccess.data.moduleAccess;
-        } else if (resRoleAccess.data && resRoleAccess.data.moduleAccess) {
-          moduleAccess = resRoleAccess.data.moduleAccess;
+        let subModuleAccess = [];
+
+        if (resUserAccess.data && (resUserAccess.data.moduleAccess?.length > 0 || resUserAccess.data.subModuleAccess?.length > 0)) {
+          moduleAccess = resUserAccess.data.moduleAccess || [];
+          subModuleAccess = resUserAccess.data.subModuleAccess || [];
+        } else if (resRoleAccess.data) {
+          moduleAccess = resRoleAccess.data.moduleAccess || [];
+          subModuleAccess = resRoleAccess.data.subModuleAccess || [];
         }
 
         // Filter modules with view permission
@@ -55,13 +67,59 @@ export const AuthProvider = ({ children }) => {
           .filter(item => item.permissions?.view)
           .map(item => item.moduleName.toLowerCase().trim());
 
-        const allowedPathsList = allModules
-          .filter(m => allowedNames.includes(m.name.toLowerCase().trim()))
-          .map(m => m.path?.toLowerCase().trim())
-          .filter(Boolean);
+        const allowedSubNames = subModuleAccess
+          .filter(item => item.permissions?.view)
+          .map(item => item.subModuleName.toLowerCase().trim());
+
+        const pathsList = [];
+        const navItems = [];
+
+        allModules.forEach(mod => {
+          const modNameLower = mod.name.toLowerCase().trim();
+          const hasModuleAccess = allowedNames.includes(modNameLower);
+
+          // Find permitted submodules
+          const activeSubs = (mod.subModules || []).filter(sub =>
+            allowedSubNames.includes(sub.name.toLowerCase().trim())
+          );
+
+          if (hasModuleAccess || activeSubs.length > 0) {
+            // Include top-level path if module view is allowed
+            if (hasModuleAccess && mod.path) {
+              pathsList.push(mod.path.toLowerCase().trim());
+            }
+
+            // Include submodule paths
+            activeSubs.forEach(sub => {
+              if (sub.path) {
+                pathsList.push(sub.path.toLowerCase().trim());
+              }
+            });
+
+            let pathVal = mod.path || "";
+            if (mod.name.toLowerCase().trim() === "home" || mod.path === "/dashboard") {
+              if (currentUser.role === "SUPER ADMIN") {
+                pathVal = "/admin/dashboard";
+              }
+            }
+
+            if ((pathVal && pathVal.trim()) || activeSubs.length > 0) {
+              navItems.push({
+                name: mod.name,
+                path: pathVal,
+                icon: mod.icon,
+                subModules: activeSubs.map(sub => ({
+                  name: sub.name,
+                  path: sub.path
+                }))
+              });
+            }
+          }
+        });
 
         setAllowedModules(allowedNames);
-        setAllowedPaths(allowedPathsList);
+        setAllowedPaths(pathsList);
+        setAllowedNavItems(navItems);
       } catch (err) {
         console.error("Fetch user/access error:", err);
         logout();
@@ -86,10 +144,11 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setAllowedModules([]);
     setAllowedPaths([]);
+    setAllowedNavItems([]);
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, allowedModules, allowedPaths, loading, login, logout }}>
+    <AuthContext.Provider value={{ token, user, allowedModules, allowedPaths, allowedNavItems, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

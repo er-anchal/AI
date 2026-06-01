@@ -86,14 +86,7 @@ const AddTemplatePage = () => {
   // Replace this function in AddTemplatePage.jsx
 
   const handleShotChange = (e) => {
-    // Only allow one shot image
-    const file = e.target.files[0];
-
-    if (file) {
-      setShotFiles([file]); // store as array with single file
-    } else {
-      setShotFiles([]);
-    }
+    setShotFiles(Array.from(e.target.files));
   };
 
   /* ---------------- UPLOAD ---------------- */
@@ -125,16 +118,15 @@ const AddTemplatePage = () => {
       formData.append("images", file);
     });
 
-    // Optional shot image
+    // Optional shot images
     if (shotFiles.length > 0) {
-      formData.append("shots", shotFiles[0]); // single shot image
+      shotFiles.forEach((file) => {
+        formData.append("shots", file);
+      });
     }
 
-    // Decide API based on whether shot image is selected
-    const uploadUrl =
-      shotFiles.length > 0
-        ? `${API_URL}/template-shots/upload`
-        : `${API_URL}/subcategories/upload`;
+    // Always use template-shots upload endpoint, it correctly handles 0 shots
+    const uploadUrl = `${API_URL}/template-shots/upload`;
 
     try {
       setLoading(true);
@@ -224,6 +216,7 @@ const AddTemplatePage = () => {
             <input
               type="file"
               hidden
+              multiple
               accept="image/*"
               onChange={handleShotChange}
             />
@@ -231,7 +224,7 @@ const AddTemplatePage = () => {
 
           {shotFiles.length > 0 && (
             <Typography mt={1} variant="body2">
-              Selected shot: {shotFiles[0].name}
+              {shotFiles.length} shot image(s) selected
             </Typography>
           )}
         </Box>

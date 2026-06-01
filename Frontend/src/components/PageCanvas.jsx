@@ -33,6 +33,7 @@ export default function PageCanvas({ design, bookSize }) {
     canvas.setZoom(scale);
     canvas.calcOffset();
 
+    // --- helper: add video object ---
     const addVideoToCanvas = async (videoUrl, reviveData = null) => {
       if (!canvas) return;
 
@@ -68,10 +69,10 @@ export default function PageCanvas({ design, bookSize }) {
       videoEl.loop = true;
       videoEl.playsInline = true;
 
-
+      // Start loading immediately
       videoEl.load();
 
-
+      // Try to autoplay, but don't block on it
       videoEl.play().catch(() => {});
 
       const fabricVideo = new FabricImage(videoEl, {

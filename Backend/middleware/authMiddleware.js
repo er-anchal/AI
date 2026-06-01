@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import RoleAccess from "../models/roleAccess.js";
 import Module from "../models/Module.js";
+import SubModule from "../models/SubModule.js";
 
 export const authMiddleware = async (req, res, next) => {
   try {
@@ -65,7 +66,7 @@ export const adminMiddleware = async (req, res, next) => {
       modulePath = "/admin/faqs";
     } else if (originalUrl.startsWith("/api/subscription-plans")) {
       modulePath = "/admin/pricing";
-    } else if (originalUrl.startsWith("/api/role-access") || originalUrl.startsWith("/api/modules")) {
+    } else if (originalUrl.startsWith("/api/role-access") || originalUrl.startsWith("/api/modules") || originalUrl.startsWith("/api/submodules")) {
       modulePath = "/roleaccess";
     } else {
       // Default to allow if it's not a standard administrative module path
@@ -99,10 +100,16 @@ export const adminMiddleware = async (req, res, next) => {
     );
 
     if (!accessItem || !accessItem.permissions?.view) {
-      return res.status(403).json({
-        success: false,
-        message: `Access denied. You do not have permission to view or manage the '${moduleName}' module.`,
-      });
+      // Check if they have access to any submodules belonging to this module
+      const allowedSubAccess = roleAccess.subModuleAccess?.find(
+        (sub) => sub.parentModuleName.toLowerCase().trim() === moduleName.toLowerCase().trim() && sub.permissions?.view
+      );
+      if (!allowedSubAccess) {
+        return res.status(403).json({
+          success: false,
+          message: `Access denied. You do not have permission to view or manage the '${moduleName}' module.`,
+        });
+      }
     }
 
     next();

@@ -2,9 +2,9 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const uploadDirectory = 'uploads/images';
+const uploadDirectory = path.join(process.cwd(), '..', 'n_frontend', 'public', 'uploads', 'images');
 
-if (!fs.existsSync(uploadDirectory)){
+if (!fs.existsSync(uploadDirectory)) {
     fs.mkdirSync(uploadDirectory, { recursive: true });
 }
 
@@ -26,7 +26,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-const upload = multer({ 
+const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 }

@@ -4,7 +4,9 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("darkMode") === "true";
+    // Default is light theme; only switch to dark if user has explicitly chosen it
+    const stored = localStorage.getItem("darkMode");
+    return stored === "true"; // null or any other value → light mode
   });
 
   const toggleTheme = () => {

@@ -6,22 +6,24 @@ import {
   updateModule,
   deleteModule,
 } from "../controllers/moduleController.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
+import { roleMiddleware } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// Create module
-router.post("/", createModule);
-
-// Get all active modules
-router.get("/", getModules);
+// Get all active modules (available to all authenticated users for navbar rendering)
+router.get("/", authMiddleware, getModules);
 
 // Get module by ID
-router.get("/:id", getModuleById);
+router.get("/:id", authMiddleware, getModuleById);
 
-// Update module
-router.put("/:id", updateModule);
+// Create module (ADMIN & SUPER ADMIN only)
+router.post("/", authMiddleware, roleMiddleware(["ADMIN", "SUPER ADMIN"]), createModule);
 
-// Soft delete module
-router.delete("/:id", deleteModule);
+// Update module (ADMIN & SUPER ADMIN only)
+router.put("/:id", authMiddleware, roleMiddleware(["ADMIN", "SUPER ADMIN"]), updateModule);
+
+// Soft delete module (ADMIN & SUPER ADMIN only)
+router.delete("/:id", authMiddleware, roleMiddleware(["ADMIN", "SUPER ADMIN"]), deleteModule);
 
 export default router;

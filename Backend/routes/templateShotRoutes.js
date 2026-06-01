@@ -10,6 +10,7 @@ import {
   createTemplate,
   getTemplates,
   getTemplatesByCategory,
+  updateTemplateShots,
 } from "../controllers/templateShotController.js";
 
 const router = express.Router();
@@ -23,9 +24,19 @@ router.post(
   adminMiddleware,
   upload.fields([
     { name: "images", maxCount: 20 }, // Template images
-    { name: "shots", maxCount: 1 }, // Single shot image
+    { name: "shots", maxCount: 20 }, // Multiple shot images
   ]),
   createTemplate,
+);
+
+router.put(
+  "/update-shots/:templateId",
+  authMiddleware,
+  adminMiddleware,
+  upload.fields([
+    { name: "shots", maxCount: 20 }, // Multiple shot images to upload/update
+  ]),
+  updateTemplateShots,
 );
 
 router.get("/", getTemplates);

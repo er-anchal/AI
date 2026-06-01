@@ -13,7 +13,7 @@ import {
   authMiddleware,
   adminMiddleware,
 } from "../middleware/authMiddleware.js";
-const upload = multer();
+const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 /* ---------------- CREATE (ADMIN ONLY) ---------------- */

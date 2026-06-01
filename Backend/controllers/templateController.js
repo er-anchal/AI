@@ -1,34 +1,36 @@
 import TemplateCategory from "../models/TemplateCategory.js";
 import { Template } from "../models/Template.js";
+import { TemplateShot } from "../models/TemplateShot.js";
 import fs from "fs";
 import path from "path";
 
 export const getDiskTemplates = async (req, res) => {
   try {
-    const folders = ["rings", "pendants", "bangles", "articles"];
-    const subcategoryNameMap = {
-      rings: "Rings",
-      pendants: "Pendants",
-      bangles: "Bangles",
-      articles: "Articles"
-    };
+    // Hardcoded folders — each name EXACTLY matches the pill label in the frontend
+    const folders = [
+      { slug: "rings", name: "Rings" },
+      { slug: "pendants", name: "Pendants" },
+      { slug: "bangles", name: "Bangles" },
+      { slug: "articles", name: "Articles" },
+    ];
 
-    let allTemplates = [];
+    const allTemplates = [];
+    const baseUrl = process.env.API_URL || "http://localhost:5001";
 
-    for (const folder of folders) {
-      const folderPath = path.resolve("uploads/videos", folder);
+    for (const { slug, name } of folders) {
+      const folderPath = path.resolve("uploads/videos", slug);
       if (fs.existsSync(folderPath)) {
         const files = fs.readdirSync(folderPath);
         for (const file of files) {
-          if (file.endsWith(".mp4")) {
+          if (file.endsWith(".mp4") || file.endsWith(".webm") || file.endsWith(".mov")) {
             allTemplates.push({
-              _id: `${folder}-${file}`,
+              _id: `${slug}-${file}`,
               fileName: file,
               categorySlug: "jewellery",
               categoryName: "Jewellery",
-              subcategoryName: subcategoryNameMap[folder] || folder,
-              subcategorySlug: folder,
-              videoUrl: `http://localhost:5000/uploads/videos/${folder}/${file}`
+              subcategoryName: name,          // "Rings" / "Pendants" / "Bangles" / "Articles"
+              subcategorySlug: slug,
+              videoUrl: `${baseUrl}/uploads/videos/${slug}/${file}`,
             });
           }
         }
@@ -109,6 +111,8 @@ export const getTemplatesByCategorySlug = async (req, res) => {
       // IMPORTANT: include subcategory fields
       subcategoryId: t.subcategoryId,
       subcategoryName: t.subcategoryName,
+      subcategorySlug: t.subcategorySlug,
+      imageUrl: t.imageUrl,
 
       createdAt: t.createdAt,
       updatedAt: t.updatedAt,
@@ -125,7 +129,6 @@ export const getTemplatesByCategorySlug = async (req, res) => {
 export const deleteTemplate = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user._id; // assuming authMiddleware sets req.user
 
     // Find the template
     const template = await Template.findById(id);
@@ -133,14 +136,34 @@ export const deleteTemplate = async (req, res) => {
       return res.status(404).json({ message: "Template not found" });
     }
 
-    // Soft delete: mark as inactive
-    template.isActive = 1; // or true if you change to boolean
-    template.deletedBy = userId;
-    template.deletedAt = new Date();
+    // Hard delete associated shots
+    await TemplateShot.deleteMany({ templateId: id });
 
-    await template.save();
+    // Hard delete the template
+    await Template.findByIdAndDelete(id);
 
-    // Optionally, you could also remove the file from disk here
+    // Remove files from disk
+    try {
+      if (template.imageUrl && template.imageUrl.startsWith("/uploads")) {
+        const diskPath = path.join(process.cwd(), "..", "n_frontend", "public", template.imageUrl.replace(/^\//, ""));
+        if (fs.existsSync(diskPath)) {
+          fs.unlinkSync(diskPath);
+        }
+      }
+
+      if (template.shots && template.shots.length > 0) {
+        for (const shotUrl of template.shots) {
+          if (shotUrl.startsWith("/uploads")) {
+            const shotDiskPath = path.join(process.cwd(), "..", "n_frontend", "public", shotUrl.replace(/^\//, ""));
+            if (fs.existsSync(shotDiskPath)) {
+              fs.unlinkSync(shotDiskPath);
+            }
+          }
+        }
+      }
+    } catch (fsErr) {
+      console.error("Failed to delete files from disk:", fsErr);
+    }
 
     res.json({ message: "Template deleted successfully" });
   } catch (err) {

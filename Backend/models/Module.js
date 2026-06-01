@@ -11,8 +11,7 @@ const moduleSchema = new mongoose.Schema(
     },
     path: {
       type: String,
-      required: true,
-      unique: true,
+      required: false,
       trim: true,
     },
     icon: {

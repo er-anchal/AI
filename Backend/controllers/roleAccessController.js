@@ -1,15 +1,21 @@
 import RoleAccess from "../models/roleAccess.js";
 export const createRoleAccess = async (req, res) => {
   try {
-    const { userId, userName, roleName, moduleAccess } = req.body;
+    const { userId, userName, roleName, moduleAccess, subModuleAccess = [] } = req.body;
 
     const now = new Date();
     let roleAccess;
+
+    const creatorId = req.user?._id || null;
+    const creatorName = req.user?.name || "system";
 
     if (roleName) {
       const existing = await RoleAccess.findOne({ roleName });
       if (existing) {
         existing.moduleAccess = moduleAccess;
+        existing.subModuleAccess = subModuleAccess;
+        existing.modifiedBy = creatorId;
+        existing.modifiedByName = creatorName;
         existing.modifiedAt = now;
         existing.modifiedOn = now.toLocaleString();
         roleAccess = await existing.save();
@@ -17,8 +23,9 @@ export const createRoleAccess = async (req, res) => {
         roleAccess = await RoleAccess.create({
           roleName,
           moduleAccess,
-          createdBy: null,
-          createdByName: "system",
+          subModuleAccess,
+          createdBy: creatorId,
+          createdByName: creatorName,
           createdOn: now.toLocaleString(),
         });
       }
@@ -27,6 +34,9 @@ export const createRoleAccess = async (req, res) => {
       if (existing) {
         existing.userName = userName;
         existing.moduleAccess = moduleAccess;
+        existing.subModuleAccess = subModuleAccess;
+        existing.modifiedBy = creatorId;
+        existing.modifiedByName = creatorName;
         existing.modifiedAt = now;
         existing.modifiedOn = now.toLocaleString();
         roleAccess = await existing.save();
@@ -35,8 +45,9 @@ export const createRoleAccess = async (req, res) => {
           userId,
           userName,
           moduleAccess,
-          createdBy: null,
-          createdByName: "system",
+          subModuleAccess,
+          createdBy: creatorId,
+          createdByName: creatorName,
           createdOn: now.toLocaleString(),
         });
       }

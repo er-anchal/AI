@@ -41,8 +41,7 @@ import { useThemeContext } from "../context/ThemeContext";
 import Footer from "../components/Footer";
 import axios from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const categories = [
   "All",
@@ -164,7 +163,7 @@ const FaqAccordionItem = ({
             </Typography>
           </Box>
         </AccordionSummary>
-        <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
+        <AccordionDetails sx={{ px: 3, pb: 3, pt: 0, overflow: "hidden", maxWidth: "100%" }}>
           <Typography
             variant="body1"
             sx={{ color: "text.secondary", lineHeight: 1.8, mb: 3 }}
@@ -178,8 +177,11 @@ const FaqAccordionItem = ({
               sx={{
                 display: "flex",
                 flexDirection: { xs: "column", md: "row" },
+                flexWrap: "wrap",
                 gap: 3,
                 alignItems: "stretch",
+                overflow: "hidden",
+                minWidth: 0,
               }}
             >
               {/* Small Swiper (Up to 4 images) */}
@@ -187,6 +189,7 @@ const FaqAccordionItem = ({
                 <Box
                   sx={{
                     flex: 1,
+                    minWidth: { xs: "100%", sm: "300px" },
                     position: "relative",
                     borderRadius: "12px",
                     overflow: "hidden",
@@ -206,6 +209,8 @@ const FaqAccordionItem = ({
                       position: "relative",
                       flexGrow: 1,
                       height: "200px",
+                      overflow: "hidden",
+                      minWidth: 0,
                     }}
                   >
                     {faq.images.length > visibleCount && startIndex > 0 && (
@@ -235,12 +240,14 @@ const FaqAccordionItem = ({
                         <Box
                           key={idx}
                           sx={{
-                            flex: 1,
+                            flex: "1 1 0",
+                            minWidth: 0,
                             height: "100%",
                             cursor: "pointer",
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "center",
+                            overflow: "hidden",
                           }}
                           onClick={(e) => openPreview(e, startIndex + idx)}
                         >
@@ -314,6 +321,7 @@ const FaqAccordionItem = ({
                 <Box
                   sx={{
                     flex: 1,
+                    minWidth: { xs: "100%", sm: "300px" },
                     borderRadius: "12px",
                     overflow: "hidden",
                     border: `1px solid ${borderColor}`,
@@ -380,6 +388,7 @@ const FaqAccordionItem = ({
                 <Box
                   sx={{
                     flex: 1,
+                    minWidth: { xs: "100%", sm: "300px" },
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
@@ -702,7 +711,7 @@ const FaqPage = () => {
       >
         {faqs.map((faq, index) => {
           let itemOrder = index;
-          
+
           // If the expanded item is on the right side (odd index), it should visually swap
           // with the left item to prevent leaving an empty space.
           if (expandedId === faq._id && index % 2 !== 0) {
@@ -712,8 +721,8 @@ const FaqPage = () => {
           }
 
           return (
-            <Box 
-              key={faq._id} 
+            <Box
+              key={faq._id}
               id={`faq-${faq._id}`}
               sx={{
                 gridColumn: expandedId === faq._id ? "1 / -1" : "auto",
@@ -740,7 +749,7 @@ const FaqPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: bgColor, color: textColor }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: bgColor, color: textColor, overflowX: "hidden" }}>
       <Box sx={{ pt: "50px", pb: 12, px: { xs: 2, md: 5 } }}>
         <Container maxWidth={false} sx={{ maxWidth: "1400px" }}>
           {/* Header Section */}
@@ -769,7 +778,7 @@ const FaqPage = () => {
                 mx: "auto",
               }}
             >
-              Find answers about AIVX, jewellery product shoots, pricing, and
+              Find answers about EKODEX, jewellery product shoots, pricing, and
               usage.
             </Typography>
 
@@ -1074,7 +1083,7 @@ const FaqPage = () => {
                       </Box>
                       <Box>
                         <Typography variant="body2" color="text.secondary">Chat to us</Typography>
-                        <Typography variant="body1" fontWeight="bold" component="a" href="mailto:hello@aivx.com" sx={{ textDecoration: "none", color: "inherit", "&:hover": { textDecoration: "underline" } }}>hello@aivx.com</Typography>
+                        <Typography variant="body1" fontWeight="bold" component="a" href="mailto:hello@ekodex.com" sx={{ textDecoration: "none", color: "inherit", "&:hover": { textDecoration: "underline" } }}>hello@ekodex.com</Typography>
                       </Box>
                     </Box>
 
@@ -1094,7 +1103,7 @@ const FaqPage = () => {
                       </Box>
                       <Box>
                         <Typography variant="body2" color="text.secondary">Visit us</Typography>
-                        <Typography variant="body1" fontWeight="bold" component="a" href="https://www.aivx.com" target="_blank" rel="noopener noreferrer" sx={{ textDecoration: "none", color: "inherit", "&:hover": { textDecoration: "underline" } }}>www.aivx.com</Typography>
+                        <Typography variant="body1" fontWeight="bold" component="a" href="https://www.ekodex.com" target="_blank" rel="noopener noreferrer" sx={{ textDecoration: "none", color: "inherit", "&:hover": { textDecoration: "underline" } }}>www.ekodex.com</Typography>
                       </Box>
                     </Box>
                   </Box>

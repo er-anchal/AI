@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import { Template } from "../models/Template.js";
 
+const UPLOADS_DIR = path.join(process.cwd(), "..", "n_frontend", "public", "uploads");
+
 export const createCategory = async (req, res) => {
   try {
     const { name } = req.body;
@@ -28,7 +30,7 @@ export const createCategory = async (req, res) => {
     const category = await TemplateCategory.create({ name, slug });
 
     // 🔹 Create uploads/category-slug folder
-    const uploadPath = path.join(process.cwd(), "uploads", slug);
+    const uploadPath = path.join(UPLOADS_DIR, name);
 
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
@@ -84,10 +86,10 @@ export const updateCategory = async (req, res) => {
       return res.status(409).json({ message: "Category already exists" });
     }
 
-    // Rename folder if slug changed
-    if (category.slug !== newSlug) {
-      const oldPath = path.join(process.cwd(), "uploads", category.slug);
-      const newPath = path.join(process.cwd(), "uploads", newSlug);
+    // Rename folder if name changed
+    if (category.name !== name) {
+      const oldPath = path.join(UPLOADS_DIR, category.name);
+      const newPath = path.join(UPLOADS_DIR, name);
 
       if (fs.existsSync(oldPath)) {
         fs.renameSync(oldPath, newPath);
@@ -133,7 +135,7 @@ export const deleteCategory = async (req, res) => {
   }
 };
 
-const TEMP_UPLOAD_PATH = path.join(process.cwd(), "uploads");
+const TEMP_UPLOAD_PATH = UPLOADS_DIR;
 
 // Upload images and save to Templates collection
 export const uploadCategoryImages = async (req, res) => {
@@ -150,7 +152,7 @@ export const uploadCategoryImages = async (req, res) => {
     if (!category)
       return res.status(404).json({ message: "Category not found" });
 
-    const folderPath = path.join(TEMP_UPLOAD_PATH, category.slug);
+    const folderPath = path.join(TEMP_UPLOAD_PATH, category.name);
     if (!fs.existsSync(folderPath))
       fs.mkdirSync(folderPath, { recursive: true });
 

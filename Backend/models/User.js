@@ -198,11 +198,10 @@ const UserSchema = new mongoose.Schema(
 );
 
 // ───────────── Password Hashing ─────────────
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
 
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
 // ───────────── Password Compare ─────────────

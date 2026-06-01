@@ -95,8 +95,8 @@ const Register = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        px: 4,
-        py: 3,
+        minHeight: "calc(100vh - 62px)",
+        py: 4,
       }}
     >
       <Container maxWidth="sm">

@@ -65,13 +65,9 @@ const Login = () => {
 
       // Dynamic redirection
       if (user.role === "SUPER ADMIN") {
-        navigate("/templates");
-      } else if (allowedPathsList.length > 0) {
-        // If they have dashboard access, prioritize /dashboard. Otherwise go to first allowed route
-        const preferredPath = allowedPathsList.find(p => p.toLowerCase() === "/dashboard") || allowedPathsList[0];
-        navigate(preferredPath);
+        navigate("/admin/dashboard");
       } else {
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
@@ -86,10 +82,8 @@ const Login = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: {
-          xs: "calc(100vh - 56px)",
-          sm: "calc(100vh - 64px)",
-        },
+        minHeight: "calc(100vh - 62px)",
+        py: 4,
       }}
     >
       <Container maxWidth="sm">

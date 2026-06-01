@@ -24,6 +24,7 @@ import {
   Switch,
   FormControlLabel,
   FormGroup,
+  Card,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -33,7 +34,7 @@ import { useThemeContext } from "../context/ThemeContext";
 import { useAuth } from "./auth/AuthContext";
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const categories = [
   "General",
@@ -52,7 +53,7 @@ const AdminFaqPage = () => {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingFaq, setEditingFaq] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     title: "",
     category: "General",
@@ -116,17 +117,17 @@ const AdminFaqPage = () => {
   };
 
   const handleCloseDialog = () => {
-      setOpenDialog(false);
-      setSelectedImages([]);
-      setSelectedVideo(null);
-      setSelectedPdf(null);
+    setOpenDialog(false);
+    setSelectedImages([]);
+    setSelectedVideo(null);
+    setSelectedPdf(null);
   };
 
   const handleFormChange = (e) => {
     const { name, value, checked, type } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: type === "checkbox" ? checked : value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value
     }));
   };
 
@@ -233,28 +234,37 @@ const AdminFaqPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: bgColor, color: textColor, p: 3 }}>
-      <Container maxWidth="lg">
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-          <Typography variant="h4" fontWeight={700}>
-            Manage FAQs
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-            sx={{ bgcolor: "#c6ff00", color: "#000", "&:hover": { bgcolor: "#b3e600" } }}
-          >
-            Add New FAQ
-          </Button>
-        </Box>
+    <Box sx={{ minHeight: "100vh", bgcolor: bgColor, color: textColor, px: 4, pt: 1.5, pb: 3, boxSizing: "border-box" }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+        <Typography variant="h4" fontWeight={700}>
+          Manage FAQs
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenDialog()}
+          sx={{ bgcolor: "#c6ff00", color: "#000", "&:hover": { bgcolor: "#b3e600" } }}
+        >
+          Add New FAQ
+        </Button>
+      </Box>
 
-        {loading ? (
-          <Box display="flex" justifyContent="center" py={10}>
-             <CircularProgress />
-          </Box>
-        ) : (
-          <TableContainer component={Paper} sx={{ bgcolor: cardColor, color: textColor, borderRadius: 2 }}>
+      {loading ? (
+        <Box display="flex" justifyContent="center" py={10}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          {/* DESKTOP TABLE VIEW */}
+          <TableContainer
+            component={Paper}
+            sx={{
+              display: { xs: "none", lg: "block" },
+              bgcolor: cardColor,
+              color: textColor,
+              borderRadius: 2,
+            }}
+          >
             <Table>
               <TableHead sx={{ bgcolor: darkMode ? "#1e293b" : "#f1f5f9" }}>
                 <TableRow>
@@ -277,9 +287,9 @@ const AdminFaqPage = () => {
                       <TableCell sx={{ color: textColor }}>{faq.title}</TableCell>
                       <TableCell sx={{ color: textColor }}>{faq.category}</TableCell>
                       <TableCell sx={{ color: textColor }}>
-                         <Typography variant="caption" sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: faq.isActive ? "#10b98120" : "#ef444420", color: faq.isActive ? "#10b981" : "#ef4444" }}>
-                           {faq.isActive ? "Active" : "Inactive"}
-                         </Typography>
+                        <Typography variant="caption" sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: faq.isActive ? "#10b98120" : "#ef444420", color: faq.isActive ? "#10b981" : "#ef4444" }}>
+                          {faq.isActive ? "Active" : "Inactive"}
+                        </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <IconButton color="primary" onClick={() => handleOpenDialog(faq)}>
@@ -295,190 +305,344 @@ const AdminFaqPage = () => {
               </TableBody>
             </Table>
           </TableContainer>
-        )}
 
-        {/* Dialog for Add/Edit FAQ */}
-        <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
-          <DialogTitle sx={{ bgcolor: cardColor, color: textColor, borderBottom: `1px solid ${borderColor}` }}>
-            {editingFaq ? "Edit FAQ" : "Add New FAQ"}
-          </DialogTitle>
-          <DialogContent sx={{ bgcolor: cardColor, color: textColor, pt: 3 }}>
-             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleFormChange}
-                  required
-                  InputLabelProps={{ style: { color: "text.secondary" } }}
-                  sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
-                />
-                <TextField
-                  select
-                  fullWidth
-                  label="Category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleFormChange}
-                  required
-                  InputLabelProps={{ style: { color: "text.secondary" } }}
-                  sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
-                >
-                  {categories.map((cat) => (
-                    <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  fullWidth
-                  label="Short Description (Optional)"
-                  name="shortDescription"
-                  value={formData.shortDescription}
-                  onChange={handleFormChange}
-                  multiline
-                  rows={2}
-                  InputLabelProps={{ style: { color: "text.secondary" } }}
-                  sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
-                />
-                <TextField
-                  fullWidth
-                  label="Answer"
-                  name="answer"
-                  value={formData.answer}
-                  onChange={handleFormChange}
-                  required
-                  multiline
-                  rows={4}
-                  InputLabelProps={{ style: { color: "text.secondary" } }}
-                  sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
-                />
-                <FormGroup>
-                  <FormControlLabel 
-                    control={
-                      <Switch 
-                        checked={formData.isActive} 
-                        onChange={handleFormChange} 
-                        name="isActive" 
-                        color="success"
-                      />
-                    } 
-                    label={formData.isActive ? "Status: Active (Visible to users)" : "Status: Inactive (Hidden from users)"} 
-                    sx={{ color: textColor }}
+          {/* MOBILE & TABLET FAQ CARDS */}
+          <Box
+            sx={{
+              display: { xs: "grid", lg: "none" },
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+              gap: 3,
+            }}
+          >
+            {faqs.length === 0 ? (
+              <Paper
+                elevation={0}
+                sx={{
+                  gridColumn: "1 / -1",
+                  py: 6,
+                  bgcolor: cardColor,
+                  border: `1px solid ${borderColor}`,
+                  borderRadius: 2,
+                  textAlign: "center",
+                }}
+              >
+                <Typography color="text.secondary">No FAQs found.</Typography>
+              </Paper>
+            ) : (
+              faqs.map((faq) => {
+                const catColors = {
+                  General: { bg: "rgba(168, 85, 247, 0.1)", text: "#a855f7" },
+                  "Product Shoot": { bg: "rgba(59, 130, 246, 0.1)", text: "#3b82f6" },
+                  Pricing: { bg: "rgba(16, 185, 129, 0.1)", text: "#10b981" },
+                  Jewellery: { bg: "rgba(245, 158, 11, 0.1)", text: "#f59e0b" },
+                  "Images & Videos": { bg: "rgba(236, 72, 153, 0.1)", text: "#ec4899" },
+                  "Account & Usage": { bg: "rgba(6, 182, 212, 0.1)", text: "#06b6d4" },
+                };
+                const col = catColors[faq.category] || { bg: "rgba(120, 120, 120, 0.1)", text: "text.secondary" };
+
+                return (
+                  <Card
+                    key={faq._id}
+                    sx={{
+                      bgcolor: cardColor,
+                      color: textColor,
+                      border: `1px solid ${borderColor}`,
+                      borderRadius: 3,
+                      boxShadow: "none",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        borderColor: darkMode ? "#c6ff00" : "#1976d2",
+                        boxShadow: darkMode
+                          ? "0 4px 20px rgba(198, 255, 0, 0.08)"
+                          : "0 4px 20px rgba(25, 118, 210, 0.08)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5, textAlign: "left" }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography
+                          variant="caption"
+                          fontWeight={700}
+                          sx={{
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: "6px",
+                            bgcolor: col.bg,
+                            color: col.text,
+                            fontFamily: "monospace",
+                          }}
+                        >
+                          {faq.category}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            px: 1.25,
+                            py: 0.5,
+                            borderRadius: "4px",
+                            fontWeight: 600,
+                            bgcolor: faq.isActive ? "#10b98120" : "#ef444420",
+                            color: faq.isActive ? "#10b981" : "#ef4444",
+                          }}
+                        >
+                          {faq.isActive ? "Active" : "Inactive"}
+                        </Typography>
+                      </Box>
+
+                      <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.4 }}>
+                        {faq.title}
+                      </Typography>
+
+                      {faq.shortDescription && (
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.85rem", fontStyle: "italic" }}>
+                          {faq.shortDescription}
+                        </Typography>
+                      )}
+
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          border: `1px solid ${borderColor}`,
+                          bgcolor: darkMode ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.01)",
+                          maxHeight: 120,
+                          overflowY: "auto",
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ whiteSpace: "pre-line", fontSize: "0.825rem", lineHeight: 1.5 }}>
+                          {faq.answer}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderTop: `1px solid ${borderColor}`,
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 1,
+                        bgcolor: darkMode ? "rgba(255,255,255,0.01)" : "rgba(0,0,0,0.005)",
+                      }}
+                    >
+                      <IconButton
+                        onClick={() => handleOpenDialog(faq)}
+                        sx={{
+                          bgcolor: darkMode ? "rgba(198,255,0,0.06)" : "rgba(25, 118, 210, 0.05)",
+                          color: darkMode ? "#c6ff00" : "#1976d2",
+                          "&:hover": {
+                            bgcolor: darkMode ? "rgba(198,255,0,0.15)" : "rgba(25, 118, 210, 0.12)",
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleDeleteFaq(faq._id)}
+                        sx={{
+                          bgcolor: "rgba(211, 47, 47, 0.05)",
+                          color: "#ef4444",
+                          "&:hover": {
+                            bgcolor: "rgba(211, 47, 47, 0.15)",
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Card>
+                );
+              })
+            )}
+          </Box>
+        </>
+      )}
+
+      {/* Dialog for Add/Edit FAQ */}
+      <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ bgcolor: cardColor, color: textColor, borderBottom: `1px solid ${borderColor}` }}>
+          {editingFaq ? "Edit FAQ" : "Add New FAQ"}
+        </DialogTitle>
+        <DialogContent sx={{ bgcolor: cardColor, color: textColor, pt: 3 }}>
+          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 3 }}>
+            <TextField
+              fullWidth
+              label="Title"
+              name="title"
+              value={formData.title}
+              onChange={handleFormChange}
+              required
+              InputLabelProps={{ style: { color: "text.secondary" } }}
+              sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
+            />
+            <TextField
+              select
+              fullWidth
+              label="Category"
+              name="category"
+              value={formData.category}
+              onChange={handleFormChange}
+              required
+              InputLabelProps={{ style: { color: "text.secondary" } }}
+              sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
+            >
+              {categories.map((cat) => (
+                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              fullWidth
+              label="Short Description (Optional)"
+              name="shortDescription"
+              value={formData.shortDescription}
+              onChange={handleFormChange}
+              multiline
+              rows={2}
+              InputLabelProps={{ style: { color: "text.secondary" } }}
+              sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
+            />
+            <TextField
+              fullWidth
+              label="Answer"
+              name="answer"
+              value={formData.answer}
+              onChange={handleFormChange}
+              required
+              multiline
+              rows={4}
+              InputLabelProps={{ style: { color: "text.secondary" } }}
+              sx={{ "& .MuiOutlinedInput-root": { color: textColor, "& fieldset": { borderColor } } }}
+            />
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.isActive}
+                    onChange={handleFormChange}
+                    name="isActive"
+                    color="success"
                   />
-                </FormGroup>
+                }
+                label={formData.isActive ? "Status: Active (Visible to users)" : "Status: Inactive (Hidden from users)"}
+                sx={{ color: textColor }}
+              />
+            </FormGroup>
 
-                <Box sx={{ border: `1px solid ${borderColor}`, p: 2, borderRadius: 2 }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>Media Uploads</Typography>
-                  
-                  {/* Images */}
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Images (Sequential Steps)</Typography>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      multiple 
-                      onChange={(e) => handleFileChange(e, "images")} 
-                      style={{ color: textColor }} 
-                    />
-                    {formData.images && formData.images.length > 0 && (
-                      <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ width: '100%' }}>Existing Images:</Typography>
-                        {formData.images.map((img, i) => (
-                           <Box key={i} sx={{ position: 'relative', display: 'inline-block', mr: 1 }}>
-                             <img src={`${API_BASE_URL.replace('/api', '')}${img}`} alt="preview" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px'}} />
-                             <IconButton 
-                               size="small" 
-                               onClick={() => handleRemoveExistingImage(i)}
-                               sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'error.main', color: '#fff', '&:hover': { bgcolor: 'error.dark' }, width: 20, height: 20 }}
-                             >
-                               <CloseIcon sx={{ fontSize: 14 }} />
-                             </IconButton>
-                           </Box>
-                        ))}
+            <Box sx={{ border: `1px solid ${borderColor}`, p: 2, borderRadius: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Media Uploads</Typography>
+
+              {/* Images */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Images (Sequential Steps)</Typography>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleFileChange(e, "images")}
+                  style={{ color: textColor }}
+                />
+                {formData.images && formData.images.length > 0 && (
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ width: '100%' }}>Existing Images:</Typography>
+                    {formData.images.map((img, i) => (
+                      <Box key={i} sx={{ position: 'relative', display: 'inline-block', mr: 1 }}>
+                        <img src={`${API_BASE_URL.replace('/api', '')}${img}`} alt="preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveExistingImage(i)}
+                          sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'error.main', color: '#fff', '&:hover': { bgcolor: 'error.dark' }, width: 20, height: 20 }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
                       </Box>
-                    )}
-                    {selectedImages.length > 0 && (
-                      <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="caption" color="success.main" sx={{ width: '100%' }}>New Images to Upload:</Typography>
-                        {selectedImages.map((img, i) => (
-                           <img key={i} src={URL.createObjectURL(img)} alt="new preview" style={{width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '2px solid #10b981'}} />
-                        ))}
-                      </Box>
-                    )}
+                    ))}
                   </Box>
-
-                  {/* Video */}
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Video (Optional)</Typography>
-                    <input 
-                      type="file" 
-                      accept="video/*" 
-                      onChange={(e) => handleFileChange(e, "video")} 
-                      style={{ color: textColor }} 
-                    />
-                    {formData.video && !selectedVideo && (
-                      <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
-                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>Existing Video:</Typography>
-                         <video src={`${API_BASE_URL.replace('/api', '')}${formData.video}`} controls style={{height: '100px', borderRadius: '4px'}} />
-                         <IconButton 
-                           size="small" 
-                           onClick={() => setFormData(prev => ({ ...prev, video: "" }))}
-                           sx={{ position: 'absolute', top: 20, right: -10, bgcolor: 'error.main', color: '#fff', '&:hover': { bgcolor: 'error.dark' }, width: 20, height: 20 }}
-                         >
-                           <CloseIcon sx={{ fontSize: 14 }} />
-                         </IconButton>
-                      </Box>
-                    )}
-                    {selectedVideo && (
-                      <Box sx={{ mt: 2 }}>
-                         <Typography variant="caption" color="success.main" sx={{ display: 'block', mb: 1 }}>New Video to Upload:</Typography>
-                         <video src={URL.createObjectURL(selectedVideo)} controls style={{height: '100px', borderRadius: '4px', border: '2px solid #10b981'}} />
-                      </Box>
-                    )}
+                )}
+                {selectedImages.length > 0 && (
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography variant="caption" color="success.main" sx={{ width: '100%' }}>New Images to Upload:</Typography>
+                    {selectedImages.map((img, i) => (
+                      <img key={i} src={URL.createObjectURL(img)} alt="new preview" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '2px solid #10b981' }} />
+                    ))}
                   </Box>
+                )}
+              </Box>
 
-                  {/* PDF */}
-                  <Box sx={{ mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>PDF Document (Optional)</Typography>
-                    <input 
-                      type="file" 
-                      accept="application/pdf" 
-                      onChange={(e) => handleFileChange(e, "pdf")} 
-                      style={{ color: textColor }} 
-                    />
-                    {formData.pdf && !selectedPdf && (
-                      <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                         <Button variant="outlined" size="small" href={`${API_BASE_URL.replace('/api', '')}${formData.pdf}`} target="_blank" sx={{ color: textColor, borderColor: borderColor, textTransform: 'none' }}>
-                            View Existing PDF
-                         </Button>
-                         <Button size="small" color="error" onClick={() => setFormData(prev => ({ ...prev, pdf: "" }))}>
-                            Remove
-                         </Button>
-                      </Box>
-                    )}
-                    {selectedPdf && (
-                      <Box sx={{ mt: 2 }}>
-                         <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1 }}>Ready to upload: {selectedPdf.name}</Typography>
-                      </Box>
-                    )}
+              {/* Video */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Video (Optional)</Typography>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => handleFileChange(e, "video")}
+                  style={{ color: textColor }}
+                />
+                {formData.video && !selectedVideo && (
+                  <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>Existing Video:</Typography>
+                    <video src={`${API_BASE_URL.replace('/api', '')}${formData.video}`} controls style={{ height: '100px', borderRadius: '4px' }} />
+                    <IconButton
+                      size="small"
+                      onClick={() => setFormData(prev => ({ ...prev, video: "" }))}
+                      sx={{ position: 'absolute', top: 20, right: -10, bgcolor: 'error.main', color: '#fff', '&:hover': { bgcolor: 'error.dark' }, width: 20, height: 20 }}
+                    >
+                      <CloseIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
                   </Box>
-                </Box>
-             </Box>
-          </DialogContent>
-          <DialogActions sx={{ bgcolor: cardColor, p: 2, borderTop: `1px solid ${borderColor}` }}>
-            <Button onClick={handleCloseDialog} sx={{ color: textColor }}>Cancel</Button>
-            <Button onClick={handleSaveFaq} variant="contained" disabled={saving} sx={{ bgcolor: "#c6ff00", color: "#000", "&:hover": { bgcolor: "#b3e600" } }}>
-              {saving ? "Saving..." : "Save"}
-            </Button>
-          </DialogActions>
-        </Dialog>
+                )}
+                {selectedVideo && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="caption" color="success.main" sx={{ display: 'block', mb: 1 }}>New Video to Upload:</Typography>
+                    <video src={URL.createObjectURL(selectedVideo)} controls style={{ height: '100px', borderRadius: '4px', border: '2px solid #10b981' }} />
+                  </Box>
+                )}
+              </Box>
 
-        <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast({ ...toast, open: false })}>
-          <Alert onClose={() => setToast({ ...toast, open: false })} severity={toast.severity}>
-            {toast.message}
-          </Alert>
-        </Snackbar>
-      </Container>
+              {/* PDF */}
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>PDF Document (Optional)</Typography>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => handleFileChange(e, "pdf")}
+                  style={{ color: textColor }}
+                />
+                {formData.pdf && !selectedPdf && (
+                  <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Button variant="outlined" size="small" href={`${API_BASE_URL.replace('/api', '')}${formData.pdf}`} target="_blank" sx={{ color: textColor, borderColor: borderColor, textTransform: 'none' }}>
+                      View Existing PDF
+                    </Button>
+                    <Button size="small" color="error" onClick={() => setFormData(prev => ({ ...prev, pdf: "" }))}>
+                      Remove
+                    </Button>
+                  </Box>
+                )}
+                {selectedPdf && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1 }}>Ready to upload: {selectedPdf.name}</Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ bgcolor: cardColor, p: 2, borderTop: `1px solid ${borderColor}` }}>
+          <Button onClick={handleCloseDialog} sx={{ color: textColor }}>Cancel</Button>
+          <Button onClick={handleSaveFaq} variant="contained" disabled={saving} sx={{ bgcolor: "#c6ff00", color: "#000", "&:hover": { bgcolor: "#b3e600" } }}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast({ ...toast, open: false })}>
+        <Alert onClose={() => setToast({ ...toast, open: false })} severity={toast.severity}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

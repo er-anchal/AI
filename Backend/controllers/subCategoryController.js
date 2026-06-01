@@ -73,7 +73,7 @@ export const getSubCategoriesByCategory = async (req, res) => {
   }
 };
 
-const TEMP_UPLOAD_PATH = path.join(process.cwd(), "uploads");
+const TEMP_UPLOAD_PATH = path.join(process.cwd(), "..", "n_frontend", "public", "uploads");
 
 export const uploadSubCategoryImages = async (req, res) => {
   try {
@@ -101,11 +101,11 @@ export const uploadSubCategoryImages = async (req, res) => {
       return res.status(404).json({ message: "SubCategory not found" });
     }
 
-    // 🔹 Create folder: uploads/category/subcategory
+    // 🔹 Create folder: uploads/CategoryName/SubCategoryName
     const folderPath = path.join(
       TEMP_UPLOAD_PATH,
-      category.slug,
-      subCategory.slug,
+      category.name,
+      subCategory.name,
     );
 
     if (!fs.existsSync(folderPath)) {
@@ -129,7 +129,7 @@ export const uploadSubCategoryImages = async (req, res) => {
       }
 
       fs.writeFileSync(dest, file.buffer);
-      const imageUrl = `/uploads/${category.slug}/${subCategory.slug}/${fileName}`;
+      const imageUrl = `/uploads/${category.name}/${subCategory.name}/${fileName}`;
       // 🔹 Save in DB
       const template = await Template.create({
         categoryId: category._id,

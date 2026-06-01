@@ -341,7 +341,7 @@ export const getProfile = async (req, res) => {
 // PUT /api/auth/me
 export const updateProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({

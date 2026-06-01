@@ -10,40 +10,34 @@ import Register from "./pages/auth/Register";
 import Profile from "./pages/Profile";
 import Home from "./pages/Home";
 import Notifications from "./pages/Notifications";
-import Settings from "./pages/Settings";
-// import Editor from "./pages/Editor"/;
 import AdminRoute from "./pages/auth/AdminRoute";
 import TemplatesPage from "./pages/Templates";
-// import UserDesigns from "./pages/UserDesigns";
-import DesignFrameCanvas from "./components/DesignFrameCanvas";
 import CategoriesPage from "./pages/CategoriesPage";
 import SubcategoriesPage from "./pages/SubcategoriesPage";
 import AdminPricingPage from "./pages/AdminPricingPage";
-
-// import AddTemplatePage from "./pages/AddTemplatePage";
-// import PrivacyPolicy from "./pages/PrivacyPolicy";
-// import TermsAndConditions from "./pages/TermsAndConditions";
-// import ContactUs from "./pages/ContactUs";
-// import Favorites from "./pages/Favorites";
-// import FlipbookViewer from "./pages/FlipBookViewer";
-// import MyFlipbooks from "./pages/MyFlipBooks";
 import PricingPage from "./pages/PricingPage";
-// import BlogPage from "./pages/BlogPage";
 import FaqPage from "./pages/FaqPage";
 import AddTemplatePage from "./pages/AddTemplatePage";
 import TemplateShotsPage from "./pages/TemplateShotsPage";
 import AdminFaqPage from "./pages/AdminFaqPage";
 import AdminQueriesPage from "./pages/AdminQueriesPage";
 import UserDashboard from "./pages/UserDashboard";
-import VideoEditorPage from "./pages/VideoEditorPage";
-import DepthEditorPage from "./pages/DepthEditorPage";
-import EnhancerPage from "./pages/EnhancerPage";
-import JewelleryEditorPage from "./pages/JewelleryEditorPage";
-// import CreateReel from "./pages/CreateReel";
-// import History from "./pages/History";
-// import Catalogue from "./pages/Catalogue";
 import UserCreation from "./pages/UserCreation";
 import RoleAccess from "./pages/RoleAccess";
+import ContactUs from "./pages/ContactUs";
+import AdminDashboard from "./pages/AdminDashboard";
+import ImageResult from "./pages/ImageResult";
+import Blog from "./pages/Blog";
+
+
+import CreateReel from "./pages/CreateReel";
+import UserDesigns from "./pages/UserDesigns";
+import Favorites from "./pages/Favorites";
+import MyFlipBooks from "./pages/MyFlipBooks";
+import FlipBookViewer from "./pages/FlipBookViewer";
+
+import Editor from "./pages/Editor";
+import DesignFrameCanvas from "./components/DesignFrameCanvas";
 
 /* ---------------- CANVAS LAYOUT ---------------- */
 function CanvasLayout({ children }) {
@@ -65,6 +59,7 @@ function CanvasLayout({ children }) {
     </Box>
   );
 }
+
 
 /* ---------------- PUBLIC LAYOUT ---------------- */
 function PublicLayout() {
@@ -96,33 +91,16 @@ function App() {
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
-          {/* //<Route path="/favorites" element={<Favorites />} /> */}
-          {/* <Route path="/my-magazines" element={<MyFlipbooks />} /> */}
-          {/* <Route path="/magazines/:id" element={<FlipbookViewer />} /> */}
-          {/* <Route path="/privacy" element={<PrivacyPolicy />} /> */}
-          {/* <Route
-            path="/terms-and-conditions"
-            element={<TermsAndConditions />}
-          /> */}
-          {/* <Route path="/usercreation" element={<UserCreation />} /> */}
           <Route path="/pricing" element={<PricingPage />} />
-          {/* <Route path="/blog" element={<BlogPage />} /> */}
-          {/* <Route path="/contact-us" element={<ContactUs />} /> */}
-          {/* <Route path="/my-designs" element={<UserDesigns />} /> */}
+          <Route path="/blog" element={<Blog />} />
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} /> 
+          <Route path="/profile" element={<Profile />} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/settings" element={<Settings />} />
-          {/* 
-          <Route
-            path="/editor/:templateId"
-            element={<Editor mode="design" />}
-          /> */}
-          {/* <Route path="/create-reel" element={<CreateReel />} /> */}
-          {/* <Route path="/history" element={<History />} /> */}
-          {/* <Route path="/catalogue" element={<Catalogue />} /> */}
+          <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/image-results" element={<ImageResult />} />
+
 
           <Route
             path="/dashboard"
@@ -132,17 +110,36 @@ function App() {
               </AdminRoute>
             }
           />
-
+          <Route path="/create-reel" element={<AdminRoute><CreateReel /></AdminRoute>} />
+          <Route path="/my-designs" element={<AdminRoute><UserDesigns /></AdminRoute>} />
+          <Route path="/favorites" element={<AdminRoute><Favorites /></AdminRoute>} />
+          <Route path="/my-magazines" element={<AdminRoute><MyFlipBooks /></AdminRoute>} />
+          <Route path="/magazines/:id" element={<AdminRoute><FlipBookViewer /></AdminRoute>} />
+          <Route path="/editor/:templateId" element={<AdminRoute><Editor mode="design" /></AdminRoute>} />
+          <Route path="/design/:templateId" element={<AdminRoute><CanvasLayout><DesignFrameCanvas /></CanvasLayout></AdminRoute>} />
+          <Route path="/design/new" element={<AdminRoute><CanvasLayout><DesignFrameCanvas /></CanvasLayout></AdminRoute>} />
+          <Route path="/design/edit/:designId" element={<AdminRoute><CanvasLayout><DesignFrameCanvas /></CanvasLayout></AdminRoute>} />
         </Route>
-        
-        {/* STANDALONE ROUTES */}
-        <Route path="/video-editor" element={<VideoEditorPage />} />
-        <Route path="/depth-editor" element={<DepthEditorPage />} />
-        <Route path="/enhancer"     element={<EnhancerPage />} />
-        <Route path="/jewellery-editor" element={<JewelleryEditorPage />} />
+
 
         {/* ADMIN ROUTES */}
         <Route element={<AdminLayout />}>
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/blog"
+            element={
+              <AdminRoute>
+                <Blog isAdminView={true} />
+              </AdminRoute>
+            }
+          />
           <Route
             path="/categories"
             element={
@@ -215,6 +212,7 @@ function App() {
               </AdminRoute>
             }
           />
+
           <Route
             path="/usercreation"
             element={
@@ -233,31 +231,6 @@ function App() {
           />
         </Route>
 
-        {/* CANVAS ROUTES */}
-        <Route
-          path="/design/:templateId"
-          element={
-            <CanvasLayout>
-              <DesignFrameCanvas />
-            </CanvasLayout>
-          }
-        />
-        <Route
-          path="/design/new"
-          element={
-            <CanvasLayout>
-              <DesignFrameCanvas />
-            </CanvasLayout>
-          }
-        />
-        <Route
-          path="/design/edit/:designId"
-          element={
-            <CanvasLayout>
-              <DesignFrameCanvas />
-            </CanvasLayout>
-          }
-        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Box>

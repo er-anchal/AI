@@ -10,14 +10,15 @@ const createDirIfNotExists = (dir) => {
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        let uploadDir = 'uploads/faq/other';
+        const baseDir = path.join(process.cwd(), '..', 'n_frontend', 'public', 'uploads', 'faq');
+        let uploadDir = path.join(baseDir, 'other');
         
         if (file.mimetype.startsWith('image/')) {
-            uploadDir = 'uploads/faq/images';
+            uploadDir = path.join(baseDir, 'images');
         } else if (file.mimetype.startsWith('video/')) {
-            uploadDir = 'uploads/faq/videos';
+            uploadDir = path.join(baseDir, 'videos');
         } else if (file.mimetype === 'application/pdf') {
-            uploadDir = 'uploads/faq/pdfs';
+            uploadDir = path.join(baseDir, 'pdfs');
         }
 
         createDirIfNotExists(uploadDir);

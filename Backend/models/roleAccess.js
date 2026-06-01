@@ -30,6 +30,19 @@ const RoleAccessSchema = new mongoose.Schema(
       },
     ],
 
+    subModuleAccess: [
+      {
+        subModuleName: String,
+        parentModuleName: String,
+        permissions: {
+          view: { type: Boolean, default: false },
+          create: { type: Boolean, default: false },
+          edit: { type: Boolean, default: false },
+          delete: { type: Boolean, default: false },
+        },
+      },
+    ],
+
     //  CREATED INFO
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

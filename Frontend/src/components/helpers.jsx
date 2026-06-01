@@ -57,46 +57,20 @@ export async function hydrateCanvasWithVideos({
   //     resolve();
   //   });
   // });
-  const loadSlideToCanvas = async (slide) => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-
-    canvas.clear();
-
-    const img = await FabricImage.fromURL(slide.url, {
-      crossOrigin: "anonymous",
-    });
-
-    img.set({
-      originX: "center",
-      originY: "center",
-      left: CANVAS_WIDTH / 2,
-      top: CANVAS_HEIGHT / 2,
-      scaleX: CANVAS_WIDTH / img.width,
-      scaleY: CANVAS_HEIGHT / img.height,
-      selectable: false,
-      evented: false,
-    });
-
-    canvas.add(img);
+  return canvas.loadFromJSON(cleanJson).then(async () => {
     canvas.requestRenderAll();
-  };
-  return new Promise((resolve) => {
-    canvas.loadFromJSON(cleanJson, async () => {
-      canvas.requestRenderAll();
 
-      const createdVideos = [];
+    const createdVideos = [];
 
-      for (const v of videoObjects) {
-        const videoUrl = v.videoSrc || v.src;
-        const fabricVideo = await addVideoToCanvas(videoUrl, v);
-        if (fabricVideo) {
-          createdVideos.push(fabricVideo); // ✅ collect
-        }
+    for (const v of videoObjects) {
+      const videoUrl = v.videoSrc || v.src;
+      const fabricVideo = await addVideoToCanvas(videoUrl, v);
+      if (fabricVideo) {
+        createdVideos.push(fabricVideo); // ✅ collect
       }
+    }
 
-      restoreZOrder?.();
-      resolve(createdVideos); // ✅ RETURN THEM
-    });
+    restoreZOrder?.();
+    return createdVideos; // ✅ RETURN THEM
   });
 }

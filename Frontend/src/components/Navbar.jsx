@@ -1,265 +1,147 @@
-import React, { useState, useEffect } from "react";
-import {
-  AppBar,
-  Box,
-  Toolbar,
-  IconButton,
-  Button,
-  Drawer,
-  Stack,
-  List,
-  Avatar,
-  Menu,
-  ListItemButton,
-  ListItemText,
-  Divider,
-  useTheme,
-  Typography,
-  MenuItem,
-  ListItemIcon,
-  Collapse,
-} from "@mui/material";
+import React, { useState } from "react";
+import { Box, Button, IconButton, Drawer, List, ListItem, Menu, MenuItem, Typography, Avatar, ListItemIcon, Divider } from "@mui/material";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../pages/auth/AuthContext";
-import PersonIcon from "@mui/icons-material/Person";
-import SettingsIcon from "@mui/icons-material/Settings";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-
-import MenuIcon from "@mui/icons-material/Menu";
-import { NavLink, useNavigate } from "react-router-dom";
-import Logo from "./Logo";
-import HomeIcon from "@mui/icons-material/Home";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import DesignServicesIcon from "@mui/icons-material/DesignServices";
-import CategoryIcon from "@mui/icons-material/Apps";
-import LoginIcon from "@mui/icons-material/Login";
-import LogoutIcon from "@mui/icons-material/Logout";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import {
-  AutoAwesome,
-  Favorite,
-  ImportContacts,
-  UsbRounded,
-} from "@mui/icons-material";
-import ContactMailIcon from "@mui/icons-material/ContactMail";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import ArticleIcon from "@mui/icons-material/Article";
-import VideocamOutlinedIcon from "@mui/icons-material/VideocamOutlined";
-// import HistoryIcon from "@mui/icons-material/History";
-import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import { useThemeContext } from "../context/ThemeContext";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
-import LightModeIcon from "@mui/icons-material/LightMode";
+import WbSunny from "@mui/icons-material/WbSunny";
+import Bedtime from "@mui/icons-material/Bedtime";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import PersonIcon from "@mui/icons-material/Person";
+import LogoutIcon from "@mui/icons-material/Logout";
+import EkodexLogoImg from "../assets/images/EkodexLogo.jpg";
 
-const commonNavItems = [{ label: "Home", path: "/", icon: <HomeIcon /> }];
-// const publicNavItems = [
-//   { label: "Home", path: "/", icon: <HomeIcon /> },
-//   // { label: "Categories", path: "/categories", icon: <CategoryIcon /> },
-//   { label: "Pricing", path: "/pricing", icon: <LocalOfferIcon /> },
-//   { label: "Contact", path: "/contact-us", icon: <ContactMailIcon /> },
-//   { label: "Blog", path: "/blog", icon: <ArticleIcon /> },
-//   // { label: "Company", path: "/about", icon: <BlogIcon /> },
-//   // ,
-// ]; // nothing when logged out
+const EkodexLogo = ({ isDark }) => (
+  <div className="d-flex align-items-center text-decoration-none" style={{ cursor: "pointer" }}>
+    <img
+      src={EkodexLogoImg}
+      alt="Ekodex Logo"
+      style={{
+        height: "36px",
+        borderRadius: "8px",
+        boxShadow: isDark ? "0 0 15px rgba(255, 255, 255, 0.05)" : "0 0 10px rgba(0, 0, 0, 0.05)",
+        transition: "transform 0.3s ease"
+      }}
+      className="logo-img"
+    />
+  </div>
+);
 
-// const privateNavItems = [
-//   { label: "Home", path: "/", icon: <HomeIcon /> },
-//   {
-//     label: "Templates",
-//     path: "/templates",
-//     adminOnly: true,
-//     icon: <DashboardIcon />,
-//   },
-
-//   {
-//     label: "Categories",
-//     path: "/categories",
-//     adminOnly: true,
-//     icon: <CategoryIcon />,
-//   },
-//   {
-//     label: "Subcategories",
-//     path: "/subcategories",
-//     adminOnly: true,
-//     icon: <CategoryIcon />,
-//   },
-//   { label: "My Designs", path: "/my-designs", icon: <DesignServicesIcon /> },
-//   { label: "Favorites", path: "/favorites", icon: <Favorite /> },
-//   { label: "My Magazines", path: "/my-magazines", icon: <ImportContacts /> },
-//   {
-//     label: "Generate",
-//     path: "/dashboard",
-//     // adminOnly: false,
-//     icon: <AutoAwesome />,
-//   },
-//   // { label: "Privacy Policy", path: "/privacy", icon: <ArticleIcon /> },
-//   // {
-//   //   label: "Terms And Conditions",
-//   //   path: "/terms-and-conditions",
-//   //   icon: <ArticleIcon />,
-//   // },
-//   // { label: "Contact Us", path: "/contact-us", icon: <ContactMailIcon /> },
-// ];
-const adminNavItems = [
-  { label: "Templates", path: "/templates", icon: <DashboardIcon /> },
-  { label: "Categories", path: "/categories", icon: <CategoryIcon /> },
-  { label: "Subcategories", path: "/subcategories", icon: <CategoryIcon /> },
-  { label: "My Designs", path: "/my-designs", icon: <DesignServicesIcon /> },
-  { label: "Favorites", path: "/favorites", icon: <Favorite /> },
-  { label: "My Magazines", path: "/my-magazines", icon: <ImportContacts /> },
-  { label: "User Creation", path: "/usercreation", icon: <UsbRounded /> },
-  //
-];
-const userNavItems = [
-  {
-    label: "Generate",
-    path: "/dashboard",
-    icon: <AutoAwesome />,
-  },
-  {
-    label: "Create Reel",
-    path: "/create-reel",
-    icon: <VideocamOutlinedIcon />,
-  },
-  // {
-  //   label: "History",
-  //   path: "/history",
-  //   icon: <HistoryIcon />,
-  // },
-  {
-    label: "Catalogue",
-    path: "/catalogue",
-    icon: <MenuBookOutlinedIcon />,
-  },
-  { label: "My Designs", path: "/my-designs", icon: <DesignServicesIcon /> },
-  { label: "Favorites", path: "/favorites", icon: <Favorite /> },
-  { label: "My Magazines", path: "/my-magazines", icon: <ImportContacts /> },
-];
-
-const navMotion = {
-  transition: "transform 0.2s ease",
-  "&:hover, &.active": {
-    transform: "translateY(-2px)",
-  },
-};
-
-const NavbarDropdown = ({ item }) => {
+// Desktop Sub-menu Dropdown Component
+const NavDropdown = ({ item, linkColor, activeLinkColor, darkMode }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-  const theme = useTheme();
-  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
-
   const handleClose = () => {
     setAnchorEl(null);
   };
 
-  const handleItemClick = (path) => {
-    navigate(path);
-    handleClose();
-  };
+  const isAnySubActive = item.subModules?.some(sub => location.pathname === sub.path) || false;
 
   return (
-    <>
+    <Box>
       <Button
-        id={`dropdown-button-${item.label.toLowerCase()}`}
-        aria-controls={open ? `dropdown-menu-${item.label.toLowerCase()}` : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
-        endIcon={<KeyboardArrowDownIcon />}
+        className={`hover-nav-link ${isAnySubActive ? "active" : ""}`}
         sx={{
-          color: theme.palette.background.paper,
-          mx: 1,
-          textTransform: 'capitalize',
-          fontWeight: 500,
-          transition: "transform 0.2s ease",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            bgcolor: 'rgba(255, 255, 255, 0.08)'
+          color: isAnySubActive ? activeLinkColor : linkColor,
+          textTransform: "none",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          fontFamily: "'Outfit', 'Inter', sans-serif",
+          p: 0,
+          minWidth: 0,
+          background: "transparent",
+          border: "none",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          position: "relative",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            width: isAnySubActive ? "90%" : "0%",
+            height: "2px",
+            bottom: "-4px",
+            left: "50%",
+            background: "linear-gradient(90deg, #B6FF2A 0%, #00E676 100%)",
+            transition: "all 0.25s ease",
+            transform: "translateX(-50%)",
+          },
+          "&:hover::after": {
+            width: "90%",
           }
         }}
       >
-        {item.label}
+        {item.name} <span style={{ fontSize: "0.65rem", opacity: 0.8 }}>▼</span>
       </Button>
       <Menu
-        id={`dropdown-menu-${item.label.toLowerCase()}`}
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': `dropdown-button-${item.label.toLowerCase()}`,
-        }}
+        disableScrollLock
         PaperProps={{
           sx: {
-            mt: 0.5,
-            minWidth: 160,
-            bgcolor: theme.palette.primary.main,
-            color: theme.palette.background.paper,
-            boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '8px',
+            mt: 1.5,
+            bgcolor: darkMode ? "#0b1120" : "#ffffff",
+            border: `1px solid ${darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(15, 23, 42, 0.08)"}`,
+            borderRadius: "12px",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
+            py: 0.5,
+            minWidth: "180px",
           }
         }}
       >
-        {item.children.map((child) => (
+        {item.subModules.map((sub) => (
           <MenuItem
-            key={child.label}
-            onClick={() => handleItemClick(child.path)}
+            key={sub.name}
+            onClick={handleClose}
             sx={{
-              py: 1,
-              px: 2.5,
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              color: theme.palette.background.paper,
-              '&:hover': {
-                bgcolor: 'rgba(255, 255, 255, 0.12)'
+              p: 0,
+              "&:hover": {
+                bgcolor: "transparent"
               }
             }}
           >
-            {child.icon && (
-              <Box sx={{ display: 'flex', color: theme.palette.secondary.main }}>
-                {child.icon}
-              </Box>
-            )}
-            {child.label}
+            <NavLink
+              to={sub.path}
+              style={({ isActive }) => ({
+                color: isActive ? activeLinkColor : linkColor,
+                textDecoration: "none",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                width: "100%",
+                padding: "10px 20px",
+                display: "block",
+                fontFamily: "'Outfit', 'Inter', sans-serif",
+                background: isActive ? (darkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)") : "transparent"
+              })}
+            >
+              {sub.name}
+            </NavLink>
           </MenuItem>
         ))}
       </Menu>
-    </>
+    </Box>
   );
 };
 
 const Navbar = () => {
-  const { token, logout, user, allowedModules } = useAuth();
+  const { token, logout, allowedNavItems, user } = useAuth();
   const isLoggedIn = !!token;
-  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER ADMIN";
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { darkMode, toggleTheme, textColor } = useThemeContext();
 
-
-  const welcomeMessage = isLoggedIn ? `Welcome, ${user?.name || "User"}` : "";
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-  const { darkMode, toggleTheme, textColor } = useThemeContext();
-  const theme = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const navigate = useNavigate();
 
-  const {
-    // darkMode,
-    // toggleTheme,
-    bgColor,
-    cardColor,
-    // textColor,
-    borderColor,
-    secondaryText,
-  } = useThemeContext();
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -268,460 +150,473 @@ const Navbar = () => {
     setAnchorEl(null);
   };
 
-  // const handleLogout = () => {
-  //   handleMenuClose();
-  //   // TODO: clear token / auth here
-  //   navigate("/login");
-  // };
-
   const handleProfile = () => {
     handleMenuClose();
     navigate("/profile");
   };
 
-  const handleSettings = () => {
-    handleMenuClose();
-    navigate("/settings");
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
-  const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
+  // Nav colors depending on theme
+  const navBgColor = darkMode ? "rgba(11, 17, 32, 0.8)" : "rgba(255, 255, 255, 0.85)";
+  const navBorderColor = darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(15, 23, 42, 0.08)";
+  const linkColor = darkMode ? "rgba(255, 255, 255, 0.65)" : "rgba(15, 23, 42, 0.65)";
+  const activeLinkColor = darkMode ? "#ffffff" : "#0f172a";
+
   const handleLogout = () => {
+    handleMenuClose();
     logout();
     navigate("/login");
   };
-  const [openDropdowns, setOpenDropdowns] = useState({});
 
-  const toggleDropdown = (label) => {
-    setOpenDropdowns((prev) => ({
-      ...prev,
-      [label]: !prev[label]
-    }));
+  const handleHomeClick = () => {
+    if (!isLoggedIn) {
+      navigate("/");
+    } else {
+      if (user?.role === "SUPER ADMIN") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+    }
   };
 
-  const isSuperAdmin = user?.role === "SUPER ADMIN";
+  // Static public links for unauthenticated users
+  const publicLinks = [
+    { name: "Home", path: "/" },
+    { name: "Pricing", path: "/pricing" },
+    { name: "Blog", path: "/blog" },
+    { name: "Contact Us", path: "/contact-us" },
+    { name: "Company", path: "/company" }
+  ];
 
-  const allowedMasterChildren = [
-    { label: "Templates", path: "/templates", icon: <DashboardIcon /> },
-    { label: "Template Shots", path: "/template-shots", icon: <DashboardIcon /> },
-    { label: "Categories", path: "/categories", icon: <CategoryIcon /> },
-    { label: "Subcategories", path: "/subcategories", icon: <CategoryIcon /> },
-  ].filter((item) => {
-    if (isSuperAdmin) return true;
-    const cleanLabel = item.label.toLowerCase().trim();
-    if (cleanLabel === "template shots") {
-      return allowedModules.includes("templates");
+  // Dynamic vs Static selection
+  const navLinks = isLoggedIn ? allowedNavItems : publicLinks;
+
+  const neonButtonStyle = {
+    color: "#030712",
+    background: "linear-gradient(135deg, #B6FF2A 0%, #00E676 100%)",
+    textTransform: "none",
+    fontWeight: 700,
+    fontSize: "0.85rem",
+    px: 3,
+    py: 1,
+    borderRadius: "50px",
+    boxShadow: darkMode ? "0 4px 15px rgba(182, 255, 42, 0.3)" : "0 4px 12px rgba(0, 230, 118, 0.2)",
+    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+    fontFamily: "'Outfit', 'Inter', sans-serif",
+    "&:hover": {
+      background: "linear-gradient(135deg, #00E676 0%, #B6FF2A 100%)",
+      boxShadow: darkMode ? "0 8px 25px rgba(182, 255, 42, 0.5)" : "0 6px 18px rgba(0, 230, 118, 0.35)",
+      transform: "translateY(-1.5px) scale(1.02)"
     }
-    return allowedModules.includes(cleanLabel);
-  });
+  };
 
-  const allowedHistoryChildren = [
-    { label: "My Designs", path: "/my-designs", icon: <DesignServicesIcon /> },
-    { label: "Favorites", path: "/favorites", icon: <Favorite /> },
-    { label: "My Magazines", path: "/my-magazines", icon: <ImportContacts /> },
-  ].filter((item) => {
-    if (isSuperAdmin) return true;
-    return allowedModules.includes(item.label.toLowerCase().trim());
-  });
+  const logoutButtonStyle = {
+    color: "#ef4444",
+    border: "1px solid rgba(239, 68, 68, 0.3)",
+    textTransform: "none",
+    fontWeight: 600,
+    fontSize: "0.85rem",
+    px: 3,
+    py: 0.8,
+    borderRadius: "50px",
+    transition: "all 0.25s ease",
+    fontFamily: "'Outfit', 'Inter', sans-serif",
+    "&:hover": {
+      background: "rgba(239, 68, 68, 0.06)",
+      borderColor: "#ef4444",
+      transform: "translateY(-1px)"
+    }
+  };
 
-  // Other dynamic items (which are not part of Master or History dropdowns)
-  const otherAllowedItems = [
-    { label: "Generate", path: "/dashboard", icon: <AutoAwesome /> },
-    { label: "Create Reel", path: "/create-reel", icon: <VideocamOutlinedIcon /> },
-    { label: "Catalogue", path: "/catalogue", icon: <MenuBookOutlinedIcon /> },
-    { label: "User Creation", path: "/usercreation", icon: <UsbRounded /> },
-    { label: "Jewellery Generator", path: "/jewellery-editor", icon: <AutoAwesome /> },
-  ].filter((item) => {
-    if (isSuperAdmin) return true;
-    const cleanLabel = item.label.toLowerCase().trim();
-    if (cleanLabel === "jewellery generator") return true;
-    return allowedModules.includes(cleanLabel);
-  });
-
-
-  const visibleNavItems = isLoggedIn
-    ? [
-        ...commonNavItems,
-        ...(allowedMasterChildren.length > 0
-          ? [{ label: "Master", isDropdown: true, children: allowedMasterChildren }]
-          : []),
-        ...(allowedHistoryChildren.length > 0
-          ? [{ label: "History", isDropdown: true, children: allowedHistoryChildren }]
-          : []),
-        ...otherAllowedItems
-      ]
-    : commonNavItems;
-  // Drawer content
-  const drawer = (
-    <Box
-      sx={{
-        width: 250,
-        bgcolor: theme.palette.primary.main,
-        color: theme.palette.background.paper,
-        height: "100%",
-        borderRadius: 0, // Remove side rounding
+  return (
+    <nav
+      className="navbar navbar-expand-lg sticky-top"
+      style={{
+        background: navBgColor,
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
+        borderBottom: `1px solid ${navBorderColor}`,
+        padding: "16px 0",
+        position: "sticky",
+        top: 0,
+        zIndex: 1000,
+        transition: "background-color 0.3s ease, border-color 0.3s ease"
       }}
-      role="presentation"
     >
-      <Box sx={{ my: 2 }}>
-        <Logo
-          color={theme.palette.background.paper}
-          variant="drawer"
-          onClick={handleDrawerToggle}
-        />
-      </Box>
-      {isLoggedIn ? (
-        <Divider sx={{ bgcolor: theme.palette.background.paper }} />
-      ) : (
-        ""
-      )}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+        
+        .hover-nav-link {
+          position: relative;
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 0.95rem;
+          font-family: 'Outfit', 'Inter', sans-serif;
+          padding: 6px 4px;
+          transition: color 0.25s ease;
+        }
 
-      <List>
-        {visibleNavItems.map((item) => {
-          if (item.isDropdown) {
-            const isDropdownOpen = !!openDropdowns[item.label];
+        .hover-nav-link::after {
+          content: '';
+          position: absolute;
+          width: 0;
+          height: 2px;
+          bottom: -4px;
+          left: 50%;
+          background: linear-gradient(90deg, #B6FF2A 0%, #00E676 100%);
+          transition: all 0.25s ease;
+          transform: translateX(-50%);
+        }
+
+        .hover-nav-link:hover::after, .hover-nav-link.active::after {
+          width: 90%;
+        }
+
+        .logo-img:hover {
+          transform: scale(1.03);
+        }
+      `}</style>
+
+      <div className="container d-flex align-items-center justify-content-between">
+        {/* Brand Logo */}
+        <div onClick={handleHomeClick} className="d-flex align-items-center">
+          <EkodexLogo isDark={darkMode} />
+        </div>
+
+        {/* Desktop Navigation Links */}
+        <div className="d-none d-lg-flex align-items-center gap-4">
+          {navLinks.map((link) => {
+            if (link.subModules && link.subModules.length > 0) {
+              return (
+                <NavDropdown
+                  key={link.name}
+                  item={link}
+                  linkColor={linkColor}
+                  activeLinkColor={activeLinkColor}
+                  darkMode={darkMode}
+                />
+              );
+            }
             return (
-              <React.Fragment key={item.label}>
-                <ListItemButton
-                  onClick={() => toggleDropdown(item.label)}
+              <NavLink
+                key={link.name}
+                to={link.path}
+                end
+                className={({ isActive }) =>
+                  `hover-nav-link ${isActive ? "active" : ""}`
+                }
+                style={({ isActive }) => ({
+                  color: isActive ? activeLinkColor : linkColor
+                })}
+              >
+                {link.name}
+              </NavLink>
+            );
+          })}
+        </div>
+
+        {/* Action Controls & Theme Toggle */}
+        <div className="d-none d-lg-flex align-items-center gap-3">
+          <IconButton
+            onClick={toggleTheme}
+            sx={{
+              color: textColor,
+              p: "10px",
+              borderRadius: "50%",
+              transition: "transform 0.3s ease",
+              "&:hover": {
+                background: darkMode ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)",
+                transform: "rotate(15deg)"
+              }
+            }}
+          >
+            {darkMode ? <WbSunny sx={{ fontSize: 20 }} /> : <Bedtime sx={{ fontSize: 20 }} />}
+          </IconButton>
+
+          {!isLoggedIn ? (
+            <>
+              <Button
+                onClick={() => navigate("/login")}
+                sx={neonButtonStyle}
+              >
+                Login
+              </Button>
+              <Button
+                onClick={() => navigate("/register")}
+                sx={neonButtonStyle}
+              >
+                Register
+              </Button>
+            </>
+          ) : (
+            <>
+              <IconButton
+                onClick={() => navigate("/notifications")}
+                sx={{
+                  color: textColor,
+                  p: "10px",
+                  borderRadius: "50%",
+                  "&:hover": {
+                    background: darkMode ? "rgba(255,255,255,0.06)" : "rgba(15,23,42,0.06)",
+                  }
+                }}
+              >
+                <NotificationsIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+
+
+              <Avatar
+                onClick={handleMenuOpen}
+                sx={{
+                  bgcolor: "#c6ff00",
+                  color: "#000",
+                  cursor: "pointer",
+                  width: 36,
+                  height: 36,
+                  fontWeight: 600,
+                  fontSize: "0.95rem"
+                }}
+              >
+                {user?.name?.charAt(0) || "U"}
+              </Avatar>
+
+              <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleMenuClose}
+                disableScrollLock
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "right",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                PaperProps={{
+                  sx: {
+                    mt: 1.5,
+                    bgcolor: darkMode ? "#0b1120" : "#ffffff",
+                    border: `1px solid ${darkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(15, 23, 42, 0.08)"}`,
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
+                    py: 0.5,
+                    minWidth: "180px",
+                  }
+                }}
+              >
+                <MenuItem disabled sx={{ opacity: "0.8 !important", fontWeight: 600, fontSize: "0.85rem", fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+                  Welcome, {user?.name || "User"}
+                </MenuItem>
+
+                <Divider />
+
+                <MenuItem
+                  onClick={handleProfile}
                   sx={{
-                    color: theme.palette.background.paper,
-                    '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.08)'
+                    fontFamily: "'Outfit', 'Inter', sans-serif",
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                    color: linkColor,
+                    "&:hover": {
+                      color: activeLinkColor,
+                      bgcolor: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)"
                     }
                   }}
                 >
-                  <ListItemText primary={item.label} />
-                  {isDropdownOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                </ListItemButton>
-                <Collapse in={isDropdownOpen} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {item.children.map((child) => (
-                      <ListItemButton
-                        key={child.label}
-                        component={NavLink}
-                        to={child.path}
-                        onClick={handleDrawerToggle}
-                        sx={{
-                          pl: 4,
-                          color: theme.palette.background.paper,
-                          "&.active": {
-                            bgcolor: theme.palette.secondary.main,
-                            fontWeight: "bold",
-                          },
-                        }}
-                      >
-                        {child.icon && (
-                          <Box sx={{ mr: 2, display: "flex", alignItems: "center" }}>
-                            {child.icon}
-                          </Box>
-                        )}
-                        <ListItemText primary={child.label} />
-                      </ListItemButton>
-                    ))}
-                  </List>
-                </Collapse>
-              </React.Fragment>
-            );
-          }
+                  <ListItemIcon sx={{ color: "inherit" }}>
+                    <PersonIcon fontSize="small" />
+                  </ListItemIcon>
+                  Profile
+                </MenuItem>
 
-          return (
-            <ListItemButton
-              key={item.label}
-              component={NavLink}
-              to={item.path}
-              end={item.path === "/"}
-              onClick={handleDrawerToggle}
-              sx={{
-                color: theme.palette.background.paper,
-                "&.active": {
-                  bgcolor: theme.palette.secondary.main,
-                  fontWeight: "bold",
-                },
-              }}
-            >
-              {item.icon && (
-                <Box sx={{ mr: 2, display: "flex", alignItems: "center" }}>
-                  {item.icon}
-                </Box>
-              )}
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          );
-        })}
-      </List>
-    </Box>
-  );
+                <MenuItem
+                  onClick={handleLogout}
+                  sx={{
+                    fontFamily: "'Outfit', 'Inter', sans-serif",
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                    color: "#ef4444",
+                    "&:hover": {
+                      bgcolor: "rgba(239, 68, 68, 0.06)"
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ color: "#ef4444" }}>
+                    <LogoutIcon fontSize="small" />
+                  </ListItemIcon>
+                  Logout
+                </MenuItem>
+              </Menu>
+            </>
+          )}
+        </div>
 
-  return (
-    <>
-      {/* <AppBar
-        position="static"
-        sx={{ bgcolor: theme.palette.primary.main, borderRadius: 0 }}
-      > */}
-      <AppBar
-        position="static"
-        sx={{
-          background:
-            "linear-gradient(90deg, #0b1b3a 0%, #0d47a1 50%, #1976d2 100%)",
-          boxShadow: "none",
-          borderRadius: 0,
-        }}
-      >
-        <Toolbar>
-          {/* Hamburger icon - mobile only */}
+        {/* Mobile Hamburger & Controls Toggle */}
+        <div className="d-flex d-lg-none align-items-center gap-2">
           <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
-
-          {/* Logo */}
-          <Box
+            onClick={toggleTheme}
             sx={{
-              flexGrow: 1,
-              display: "flex",
-              justifyContent: { xs: "center", sm: "flex-start" },
+              color: textColor,
+              p: "8px",
+              borderRadius: "50%"
             }}
           >
-            <Logo color={theme.palette.background.paper} variant="navbar" />
-          </Box>
+            {darkMode ? <WbSunny sx={{ fontSize: 20 }} /> : <Bedtime sx={{ fontSize: 20 }} />}
+          </IconButton>
 
-          {/* Desktop menu */}
-          <Box
-            sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center" }}
+          <IconButton
+            onClick={toggleMobileMenu}
+            sx={{
+              color: textColor,
+              p: "8px",
+              borderRadius: "50%"
+            }}
           >
-            {/* Show welcome message */}
-            {isLoggedIn && (
-              <Typography
-                sx={{
-                  color: theme.palette.background.paper,
-                  mr: 2,
-                  fontWeight: 500,
-                }}
-                variant="body1"
-              >
-                {/* {welcomeMessage} */}
-              </Typography>
-            )}
+            {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+          </IconButton>
+        </div>
+      </div>
 
-            {visibleNavItems.map((item) => {
-              if (item.isDropdown) {
-                return <NavbarDropdown key={item.label} item={item} />;
-              }
-              return (
-                <Button
-                  key={item.label}
-                  component={NavLink}
-                  to={item.path}
-                  end={item.path === "/"}
-                  sx={{
-                    color: theme.palette.background.paper,
-                    mx: 1,
-                    ...navMotion,
-                    "&.active": {
-                      transform: "translateY(-2px)",
-                      borderBottom: `2px solid ${theme.palette.secondary.main}`,
-                      borderRadius: 0,
-                      fontWeight: "bold",
-                    },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              );
-            })}
-
-            {!isLoggedIn ? (
-              <>
-                <Button
-                  component={NavLink}
-                  to="/login"
-                  variant="outlined"
-                  sx={{
-                    color: theme.palette.background.paper,
-                    borderColor: theme.palette.background.paper,
-                    mx: 1,
-                    ...navMotion,
-                    "&.active": {
-                      transform: "translateY(-2px)",
-                      bgcolor: "rgba(255,255,255,0.15)",
-                    },
-                  }}
-                >
-                  Login
-                </Button>
-
-                <Button
-                  component={NavLink}
-                  to="/register"
-                  variant="contained"
-                  size="small"
-                  sx={{
-                    bgcolor: theme.palette.background.paper,
-                    color: theme.palette.primary.main,
-                    fontWeight: 600,
-                    mx: 1,
-                    ...navMotion,
-                    "&.active": {
-                      transform: "translateY(-2px)",
-                      boxShadow: `0 6px 12px rgba(0,0,0,0.15)`,
-                    },
-                  }}
-                >
-                  Register
-                </Button>
-              </>
-            ) : (
-              <>
-                {/* <Button
-                  component={NavLink}
-                  to="/profile"
-                  sx={{
-                    color: theme.palette.background.paper,
-                    mx: 1,
-                    ...navMotion, // ✅ THIS WAS MISSING
-                    "&.active": {
-                      transform: "translateY(-2px)",
-                      borderBottom: `3px solid ${theme.palette.secondary.main}`,
-                      fontWeight: "bold",
-                    },
-                  }}
-                >
-                  Profile
-                </Button> */}
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <Button
-                    onClick={toggleTheme}
-                    sx={{
-                      minWidth: 40,
-                      width: 40,
-                      height: 40,
-                      borderRadius: "50%",
-                      bgcolor: darkMode ? "#141821" : "rgba(255,255,255,0.08)",
-                      color: theme.palette.background.paper,
-                      "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
-                    }}
-                  >
-                    {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-                  </Button>
-
-                  {isLoggedIn && (
-                    <>
-                      <IconButton
-                        onClick={() => navigate("/notifications")}
-                        sx={{
-                          color: theme.palette.background.paper,
-                          bgcolor: "rgba(255,255,255,0.08)",
-                          "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
-                          width: 40,
-                          height: 40,
-                        }}
-                      >
-                        <NotificationsIcon />
-                      </IconButton>
-
-                      <IconButton
-                        onClick={() => navigate("/settings")}
-                        sx={{
-                          color: theme.palette.background.paper,
-                          bgcolor: "rgba(255,255,255,0.08)",
-                          "&:hover": { bgcolor: "rgba(255,255,255,0.15)" },
-                          width: 40,
-                          height: 40,
-                        }}
-                      >
-                        <SettingsIcon />
-                      </IconButton>
-                    </>
-                  )}
-                  {/* <Box
-                    sx={{
-                      px: 2,
-                      py: 1,
-                      borderRadius: "50px",
-                      bgcolor: darkMode ? "#141821" : "#f5f5f5",
-                      color: textColor,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {/* 10 Credits */}
-                  {/* </Box> */}
-
-                  {/* USER MENU */}
-                  {isLoggedIn && (
-                    <>
-                      <Avatar
-                        onClick={handleMenuOpen}
-                        sx={{
-                          bgcolor: "#c6ff00",
-                          color: "#000",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {user?.name?.charAt(0) || "U"}
-                      </Avatar>
-
-                      <Menu
-                        anchorEl={anchorEl}
-                        open={open}
-                        onClose={handleMenuClose}
-                        anchorOrigin={{
-                          vertical: "bottom",
-                          horizontal: "right",
-                        }}
-                        transformOrigin={{
-                          vertical: "top",
-                          horizontal: "right",
-                        }}
-                      >
-                        <MenuItem disabled>
-                          Welcome, {user?.name || "User"}
-                        </MenuItem>
-
-                        <MenuItem onClick={handleProfile}>
-                          <ListItemIcon>
-                            <PersonIcon fontSize="small" />
-                          </ListItemIcon>
-                          Profile
-                        </MenuItem>
-
-                        <MenuItem onClick={handleLogout}>
-                          <ListItemIcon>
-                            <LogoutIcon fontSize="small" />
-                          </ListItemIcon>
-                          Logout
-                        </MenuItem>
-                      </Menu>
-                    </>
-                  )}
-                </Stack>
-              </>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer Navigation */}
       <Drawer
-        anchor="left"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: "block", sm: "none" },
-          "& .MuiDrawer-paper": {
-            boxSizing: "border-box",
-            width: 250,
-            borderRadius: 0, // Remove rounded corners
-          },
+        anchor="right"
+        open={mobileMenuOpen}
+        onClose={toggleMobileMenu}
+        PaperProps={{
+          sx: {
+            width: "280px",
+            background: darkMode ? "#0b1120" : "#ffffff",
+            borderLeft: `1px solid ${navBorderColor}`,
+            p: 3,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between"
+          }
         }}
       >
-        {drawer}
+        <Box>
+          <Box className="d-flex align-items-center justify-content-between mb-4">
+            <EkodexLogo isDark={darkMode} />
+            <IconButton onClick={toggleMobileMenu} sx={{ color: textColor }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <List sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            {navLinks.map((link) => {
+              if (link.subModules && link.subModules.length > 0) {
+                return (
+                  <Box key={link.name} sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontFamily: "'Outfit', 'Inter', sans-serif",
+                        fontWeight: 700,
+                        color: darkMode ? "rgba(255,255,255,0.4)" : "rgba(15,23,42,0.4)",
+                        letterSpacing: "1px",
+                        textTransform: "uppercase",
+                        mt: 0.5
+                      }}
+                    >
+                      {link.name}
+                    </Typography>
+                    {link.subModules.map((sub) => (
+                      <NavLink
+                        key={sub.name}
+                        to={sub.path}
+                        onClick={toggleMobileMenu}
+                        className={({ isActive }) =>
+                          `hover-nav-link w-100 py-1.5 ${isActive ? "active" : ""}`
+                        }
+                        style={({ isActive }) => ({
+                          color: isActive ? activeLinkColor : linkColor,
+                          paddingLeft: "12px",
+                          borderLeft: `1px solid ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(15,23,42,0.1)"}`
+                        })}
+                      >
+                        {sub.name}
+                      </NavLink>
+                    ))}
+                  </Box>
+                );
+              }
+              return (
+                <ListItem
+                  key={link.name}
+                  disablePadding
+                  onClick={toggleMobileMenu}
+                >
+                  <NavLink
+                    to={link.path}
+                    end
+                    className={({ isActive }) =>
+                      `hover-nav-link w-100 py-2 ${isActive ? "active" : ""}`
+                    }
+                    style={({ isActive }) => ({
+                      color: isActive ? activeLinkColor : linkColor
+                    })}
+                  >
+                    {link.name}
+                  </NavLink>
+                </ListItem>
+              );
+            })}
+          </List>
+        </Box>
+
+        <Box className="d-flex flex-column gap-3 mt-4">
+          {!isLoggedIn ? (
+            <>
+              <Button
+                onClick={() => {
+                  toggleMobileMenu();
+                  navigate("/login");
+                }}
+                sx={{ ...neonButtonStyle, width: "100%" }}
+              >
+                Login
+              </Button>
+              <Button
+                onClick={() => {
+                  toggleMobileMenu();
+                  navigate("/register");
+                }}
+                sx={{ ...neonButtonStyle, width: "100%" }}
+              >
+                Register
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={() => {
+                  toggleMobileMenu();
+                  navigate("/profile");
+                }}
+                sx={{ ...neonButtonStyle, width: "100%" }}
+              >
+                Profile
+              </Button>
+              <Button
+                onClick={() => {
+                  toggleMobileMenu();
+                  handleLogout();
+                }}
+                sx={{ ...logoutButtonStyle, width: "100%" }}
+              >
+                Logout
+              </Button>
+            </>
+          )}
+        </Box>
       </Drawer>
-    </>
+    </nav>
   );
 };
 
